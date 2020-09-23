@@ -24,7 +24,6 @@ public class RabbitsGrassSimulationSpace {
     public void growGrass(int grass) {
         // Randomly place grass in grassSpace
         for (int i = 0; i < grass; i++) {
-
             // Choose coordinates
             int x = (int) (Math.random() * grassSpace.getSizeX());
             int y = (int) (Math.random() * grassSpace.getSizeY());

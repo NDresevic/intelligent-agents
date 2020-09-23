@@ -21,6 +21,10 @@ import java.util.concurrent.locks.ReentrantLock;
  * order to run Repast simulation. It manages the entire RePast
  * environment and the simulation.
  */
+
+//FIXME
+//    1. I don't see paramters min and max life span in parameter list
+
 public class RabbitsGrassSimulationModel extends SimModelImpl {
 
     public static void main(String[] args) {
@@ -39,12 +43,13 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
     private static final int GRID_SIZE = 20;
     private static final int NUM_INIT_RABBITS = 40;
     private static final int NUM_INIT_GRASS = 10;
-    private static final int GRASS_GROWTH_RATE = 1;
-    private static final int BIRTH_THRESHOLD = 10;
+    private static final int GRASS_GROWTH_RATE = 10;
+    private static final int BIRTH_THRESHOLD = 45;
     private static final int AGENT_MIN_ENERGY = 30;
     private static final int AGENT_MAX_ENERGY = 50;
     private static final int BABY_LIFE_SPAN = (AGENT_MAX_ENERGY + AGENT_MIN_ENERGY) / 2;
-    private static final int BIRTH_FREQUENCY = 40;
+    private static final int BIRTH_FREQUENCY = 20;
+    private  static final float BIRTHGIVING_LOSS = 0.5f;
 
     private int gridSize = GRID_SIZE;
     private int numInitRabbits = NUM_INIT_RABBITS;
@@ -55,12 +60,18 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
     private int agentMaxEnergy = AGENT_MAX_ENERGY;
     private int babyLifeSpan = BABY_LIFE_SPAN;
     private int birthFrequency = BIRTH_FREQUENCY;
-    private ReentrantLock agentListLock = new ReentrantLock();
+    private float birthgivingLoss = BIRTHGIVING_LOSS;
 
+    //model
     private Schedule schedule;
     private List<RabbitsGrassSimulationAgent> agentList;
     private RabbitsGrassSimulationSpace grassSpace;
     private DisplaySurface displaySurf;
+
+    //statistics
+    private float averageLifeTime = 0;
+    private float averageBornBabes = 0;
+    private int deadAgents = 0;
 
     public void setup() {
         grassSpace = null;
@@ -102,42 +113,39 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
                     agent.step();
                 }
 
-                int deadAgents = reapDeadAgents();
-                displaySurf.updateDisplay();
-            }
-        }
-        schedule.scheduleActionBeginning(0, new SimulationStep());
-
-        class CountLiving extends BasicAction {
-            public void execute() {
-                countLivingAgents();
+                int toBeDeadAgents = reapDeadAgents();
 
                 for (RabbitsGrassSimulationAgent agent : agentList) {
-					if (agent.getEnergy() > birthThreshold && agent.getBirthFrequency() > birthFrequency
+                    if (agent.getEnergy() > birthThreshold && agent.getBirthFrequency() > birthFrequency
+                            //adding baby as an agent
                             && didAddNewAgentToList()) {
-					    // todo: specify the position of new born agent if we want
-					    agent.reproduce();
-					}
-				}
-            }
-        }
-        schedule.scheduleActionAtInterval(1, new CountLiving());
-
-        class ChangeDirection extends BasicAction {
-            public void execute() {
-                for (RabbitsGrassSimulationAgent agent : agentList) {
-                    agent.step();
+                        // todo: specify the position of new born agent if we want
+                        agent.reproduce();
+                    }
                 }
-            }
-        }
-        schedule.scheduleActionAtInterval(0.5, new ChangeDirection());
 
-        class UpdateGrassInSpace extends BasicAction {
-            public void execute() {
+                displaySurf.updateDisplay();
                 grassSpace.growGrass(grassGrowthRate);
             }
         }
-        schedule.scheduleActionAtInterval(1, new UpdateGrassInSpace());
+        schedule.scheduleActionBeginning(100, new SimulationStep());
+
+        class CountLiving extends BasicAction {
+            public void execute(){
+                countLivingAgents();
+            }
+        }
+
+        schedule.scheduleActionAtInterval(10, new CountLiving());
+
+        class CalculateStatistics extends BasicAction {
+            public void execute() {
+                System.out.println("\n\nAverage lifetime: " + averageLifeTime);
+                System.out.println("Average babes born per rabbit: " + averageBornBabes);
+            }
+        }
+
+        schedule.scheduleActionAtEnd(new CalculateStatistics());
     }
 
     private void buildDisplay() {
@@ -156,7 +164,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
     }
 
     private boolean didAddNewAgentToList() {
-        RabbitsGrassSimulationAgent a = new RabbitsGrassSimulationAgent(agentMinEnergy, agentMaxEnergy, birthThreshold);
+        RabbitsGrassSimulationAgent a = new RabbitsGrassSimulationAgent(agentMinEnergy, agentMaxEnergy, birthgivingLoss);
 		if (!grassSpace.didAddAgentToSpace(a)) {
 		    System.err.println("Can't add new agent: " + a);
 		    return false;
@@ -172,6 +180,10 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
             if (agent.getEnergy() < 1) {
                 grassSpace.removeAgentAt(agent.getX(), agent.getY());
                 agentList.remove(agent);
+                System.out.println("Agent " + agent.getId() + " lived for " + agent.getLifeTime() + " steps and gave birth to " + agent.getBornBabies() + " babies.");
+                deadAgents++;
+                averageLifeTime += (agent.getLifeTime() - averageLifeTime)/deadAgents;
+                averageBornBabes += (agent.getBornBabies() - averageBornBabes)/deadAgents;
                 count++;
             }
         }
@@ -180,7 +192,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 
     private int countLivingAgents() {
         int livingAgents = 0;
-        // todo: thread safe?
+        // todo: thread safe? -> Duda: I think yes, cuz each Action is different thread
         for (RabbitsGrassSimulationAgent agent : agentList) {
             if (agent.getEnergy() > 0) {
                 livingAgents++;
@@ -194,78 +206,51 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
         // Parameters to be set by users via the Repast UI slider bar
         // Do "not" modify the parameters names provided in the skeleton code, you can add more if you want
         return new String[]{"GridSize", "NumInitRabbits", "NumInitGrass", "GrassGrowthRate", "BirthThreshold",
-                "AgentMinLifespan", "AgentMaxLifespan", "BabyLifeSpan"};
+                "AgentMinLifespan", "AgentMaxLifespan", "BabyLifeSpan", "BirthFrequency", "BirthgivingLoss"};
+        //FIXME why I don't see min and max life span in setup?
     }
 
-    public String getName() {
-        return "RabbitGrass";
-    }
+    public String getName() { return "RabbitGrass"; }
 
-    public Schedule getSchedule() {
-        return schedule;
-    }
+    public Schedule getSchedule() { return schedule; }
 
-    public int getGridSize() {
-        return gridSize;
-    }
+    public int getGridSize() { return gridSize; }
 
-    public void setGridSize(int gridSize) {
-        this.gridSize = gridSize;
-    }
+    public void setGridSize(int gridSize) { this.gridSize = gridSize; }
 
-    public int getNumInitRabbits() {
-        return numInitRabbits;
-    }
+    public int getNumInitRabbits() { return numInitRabbits; }
 
-    public void setNumInitRabbits(int numInitRabbits) {
-        this.numInitRabbits = numInitRabbits;
-    }
+    public void setNumInitRabbits(int numInitRabbits) { this.numInitRabbits = numInitRabbits; }
 
-    public int getNumInitGrass() {
-        return numInitGrass;
-    }
+    public int getNumInitGrass() { return numInitGrass; }
 
-    public void setNumInitGrass(int numInitGrass) {
-        this.numInitGrass = numInitGrass;
-    }
+    public void setNumInitGrass(int numInitGrass) { this.numInitGrass = numInitGrass; }
 
-    public int getGrassGrowthRate() {
-        return grassGrowthRate;
-    }
+    public int getGrassGrowthRate() { return grassGrowthRate; }
 
-    public void setGrassGrowthRate(int grassGrowthRate) {
-        this.grassGrowthRate = grassGrowthRate;
-    }
+    public void setGrassGrowthRate(int grassGrowthRate) { this.grassGrowthRate = grassGrowthRate; }
 
-    public int getBirthThreshold() {
-        return birthThreshold;
-    }
+    public int getBirthThreshold() { return birthThreshold; }
 
-    public void setBirthThreshold(int birthThreshold) {
-        this.birthThreshold = birthThreshold;
-    }
+    public void setBirthThreshold(int birthThreshold) { this.birthThreshold = birthThreshold; }
 
-    public int getBabyLifeSpan() {
-        return babyLifeSpan;
-    }
+    public int getBabyLifeSpan() { return babyLifeSpan; }
 
-    public void setBabyLifeSpan(int babyLifeSpan) {
-        this.babyLifeSpan = babyLifeSpan;
-    }
+    public void setBabyLifeSpan(int babyLifeSpan) { this.babyLifeSpan = babyLifeSpan; }
 
-    public int getAgentMinEnergy() {
-        return agentMinEnergy;
-    }
+    public int getAgentMinEnergy() { return agentMinEnergy; }
 
-    public void setAgentMinEnergy(int agentMinEnergy) {
-        this.agentMinEnergy = agentMinEnergy;
-    }
+    public void setAgentMinEnergy(int agentMinEnergy) { this.agentMinEnergy = agentMinEnergy; }
 
-    public int getAgentMaxEnergy() {
-        return agentMaxEnergy;
-    }
+    public int getAgentMaxEnergy() { return agentMaxEnergy; }
 
-    public void setAgentMaxEnergy(int agentMaxEnergy) {
-        this.agentMaxEnergy = agentMaxEnergy;
-    }
+    public void setAgentMaxEnergy(int agentMaxEnergy) { this.agentMaxEnergy = agentMaxEnergy; }
+
+    public int getBirthFrequency() { return birthFrequency; }
+
+    public void setBirthFrequency(int birthFrequency) { this.birthFrequency = birthFrequency; }
+
+    public float getBirthgivingLoss() { return birthgivingLoss; }
+
+    public void setBirthgivingLoss(float birthgivingLoss) { this.birthgivingLoss = birthgivingLoss; }
 }
