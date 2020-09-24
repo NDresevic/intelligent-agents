@@ -23,15 +23,17 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 
 //FIXME
-//    1. I don't see paramters min and max life span in parameter list
+//    1. I don't see parameters min and max life span in parameter list
+//      2. arbitrary units of grass on each cell -> think it's fine, check it
+//      3. invalid argument values
+//      4. noticed big fluctuations in results for the same parameter values
 
 public class RabbitsGrassSimulationModel extends SimModelImpl {
 
     public static void main(String[] args) {
-        System.out.println("Rabbit skeleton");
-
         SimInit init = new SimInit();
         RabbitsGrassSimulationModel model = new RabbitsGrassSimulationModel();
+        startTime = System.nanoTime();
         // Do "not" modify the following lines of parsing arguments
         if (args.length == 0) // by default, you don't use parameter file nor batch mode
             init.loadModel(model, "", false);
@@ -44,20 +46,20 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
     private static final int NUM_INIT_RABBITS = 40;
     private static final int NUM_INIT_GRASS = 10;
     private static final int GRASS_GROWTH_RATE = 10;
-    private static final int BIRTH_THRESHOLD = 45;
+    //private static final int BIRTH_THRESHOLD = 45;
     private static final int AGENT_MIN_ENERGY = 30;
     private static final int AGENT_MAX_ENERGY = 50;
     private static final int BABY_LIFE_SPAN = (AGENT_MAX_ENERGY + AGENT_MIN_ENERGY) / 2;
     private static final int BIRTH_FREQUENCY = 20;
-    private  static final float BIRTHGIVING_LOSS = 0.5f;
+    private  static final float BIRTHGIVING_LOSS = 0.3f;
 
     private int gridSize = GRID_SIZE;
     private int numInitRabbits = NUM_INIT_RABBITS;
     private int numInitGrass = NUM_INIT_GRASS;
     private int grassGrowthRate = GRASS_GROWTH_RATE;
-    private int birthThreshold = BIRTH_THRESHOLD;
     private int agentMinEnergy = AGENT_MIN_ENERGY;
     private int agentMaxEnergy = AGENT_MAX_ENERGY;
+    private int birthThreshold = AGENT_MAX_ENERGY + 1;
     private int babyLifeSpan = BABY_LIFE_SPAN;
     private int birthFrequency = BIRTH_FREQUENCY;
     private float birthgivingLoss = BIRTHGIVING_LOSS;
@@ -72,6 +74,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
     private float averageLifeTime = 0;
     private float averageBornBabes = 0;
     private int deadAgents = 0;
+    private static long startTime;
 
     public void setup() {
         grassSpace = null;
@@ -132,7 +135,10 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 
         class CountLiving extends BasicAction {
             public void execute(){
-                countLivingAgents();
+                int liveAgents = countLivingAgents();
+                if(liveAgents == 0){
+                    RabbitsGrassSimulationModel.this.stop();
+                }
             }
         }
 
@@ -140,8 +146,13 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 
         class CalculateStatistics extends BasicAction {
             public void execute() {
-                System.out.println("\n\nAverage lifetime: " + averageLifeTime);
-                System.out.println("Average babes born per rabbit: " + averageBornBabes);
+                System.out.println(
+                        "\n\nAverage lifetime: " + averageLifeTime
+                        + "\nAverage babes born per rabbit: " + averageBornBabes
+                        + "\nPopulation size: " + RabbitsGrassSimulationAgent.getAgentID()
+                        + "\nSimulation duration: " + (System.nanoTime() - startTime)/ 1_000_000_000.0 + " seconds"
+                );
+
             }
         }
 
@@ -149,13 +160,13 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
     }
 
     private void buildDisplay() {
-        ColorMap map = new ColorMap();
+        ColorMap mapGrass = new ColorMap();
         for (int i = 1; i < 16; i++) {
-            map.mapColor(i, new Color(i * 8 + 127, 0, 0));
+            mapGrass.mapColor(i, new Color(127 - i*8,  255 - i*8, 127 - i*8));
         }
-        map.mapColor(0, Color.white);
+        mapGrass.mapColor(0, Color.white);
 
-        Value2DDisplay displayGrass = new Value2DDisplay(grassSpace.getCurrentGrassSpace(), map);
+        Value2DDisplay displayGrass = new Value2DDisplay(grassSpace.getCurrentGrassSpace(), mapGrass);
         Object2DDisplay displayAgents = new Object2DDisplay(grassSpace.getCurrentAgentSpace());
         displayAgents.setObjectList(agentList);
 
@@ -198,6 +209,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
                 livingAgents++;
             }
         }
+
         System.out.println("Number of living agents is: " + livingAgents);
         return livingAgents;
     }
@@ -205,8 +217,8 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
     public String[] getInitParam() {
         // Parameters to be set by users via the Repast UI slider bar
         // Do "not" modify the parameters names provided in the skeleton code, you can add more if you want
-        return new String[]{"GridSize", "NumInitRabbits", "NumInitGrass", "GrassGrowthRate", "BirthThreshold",
-                "AgentMinLifespan", "AgentMaxLifespan", "BabyLifeSpan", "BirthFrequency", "BirthgivingLoss"};
+        return new String[]{"AgentMinLifespan", "AgentMaxLifespan", "GridSize", "NumInitRabbits", "NumInitGrass", "GrassGrowthRate", "BirthThreshold",
+                "BabyLifeSpan", "BirthFrequency", "BirthgivingLoss"};
         //FIXME why I don't see min and max life span in setup?
     }
 
@@ -253,4 +265,6 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
     public float getBirthgivingLoss() { return birthgivingLoss; }
 
     public void setBirthgivingLoss(float birthgivingLoss) { this.birthgivingLoss = birthgivingLoss; }
+
+
 }

@@ -41,16 +41,11 @@ public class RabbitsGrassSimulationAgent implements Drawable {
     }
 
     public void draw(SimGraphics arg0) {
-        arg0.drawFastRoundRect(Color.green);
+        arg0.drawFastRoundRect(Color.black);
     }
 
-    public int getX() {
-        return x;
-    }
-
-    public int getY() {
-        return y;
-    }
+    public int getX() { return x; }
+    public int getY() { return y; }
 
     public void setXY(int newX, int newY) {
         x = newX;
@@ -73,13 +68,13 @@ public class RabbitsGrassSimulationAgent implements Drawable {
 
         int newX = (x + dX) % grassSpace.getGridSize();
         int newY = (y + dY) % grassSpace.getGridSize();
-
         Object2DGrid grid = grassSpace.getCurrentAgentSpace();
         newX = (newX + grid.getSizeX()) % grid.getSizeX();
         newY = (newY + grid.getSizeY()) % grid.getSizeY();
 
         energy--;
         lifeTime++;
+
         if (tryMove(newX, newY)) {
             energy += grassSpace.removeGrassAt(x, y);
             birthFrequency++;

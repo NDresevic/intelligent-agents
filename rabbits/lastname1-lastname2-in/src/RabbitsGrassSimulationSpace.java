@@ -9,6 +9,7 @@ public class RabbitsGrassSimulationSpace {
     private Object2DGrid agentSpace;
     // todo: check if we need to have x and y size separately?
     private int gridSize;
+    public static final int GRASS_ON_CELL_BOUNDARY = 16;
 
     public RabbitsGrassSimulationSpace(int xSize, int ySize) {
         grassSpace = new Object2DGrid(xSize, ySize);
@@ -29,11 +30,14 @@ public class RabbitsGrassSimulationSpace {
             int y = (int) (Math.random() * grassSpace.getSizeY());
 
             // Get the value of the object at those coordinates
+            //
             int currentValue = getGrassAt(x, y);
+
 
             // Replace the Integer object with another one with the new value
             // todo: check if we want to add random amounts of grass instead of 1 unit each time?
-            grassSpace.putObjectAt(x, y, currentValue + 1);
+            //  Duda: I think it's fine since grow grass is called with grass growth rate parameter
+            grassSpace.putObjectAt(x, y, Math.min(currentValue + 1, GRASS_ON_CELL_BOUNDARY));
         }
     }
 
