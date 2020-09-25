@@ -103,6 +103,7 @@ public class RabbitsGrassSimulationSpace {
         RabbitsGrassSimulationAgent agent = (RabbitsGrassSimulationAgent) agentSpace.getObjectAt(x, y);
         removeAgentAt(x, y);
         agent.setXY(newX, newY);
+        agentsCount++;
         agentSpace.putObjectAt(newX, newY, agent);
         return true;
     }

@@ -77,7 +77,8 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
     private int deadAgents = 0;
     private static long startTime;
 
-    private OpenSequenceGraph graph;
+    private OpenSequenceGraph grassGraph;
+    private OpenSequenceGraph rabbitsGraph;
     private OpenHistogram agentEnergyDistribution;
 
     class GrassInSpace implements DataSource, Sequence {
@@ -120,12 +121,19 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
         displaySurf = new DisplaySurface(this, "Rabbit Grass Model Window 1");
         registerDisplaySurface("Rabbit Grass Model Window 1", displaySurf);
 
-        if (graph != null) {
-            graph.dispose();
+        if (grassGraph != null) {
+            grassGraph.dispose();
         }
-        graph = new OpenSequenceGraph("Amount Of Grass and Rabbits In Space", this);
-        graph.setYRange(0.0, 1000);
-        registerMediaProducer("Plot", graph);
+        grassGraph = new OpenSequenceGraph("Amount of Grass In Space", this);
+        grassGraph.setYRange(0.0, 1000);
+        registerMediaProducer("Plot", grassGraph);
+
+        if (rabbitsGraph != null) {
+            rabbitsGraph.dispose();
+        }
+        rabbitsGraph = new OpenSequenceGraph("Amount of Rabbits In Space", this);
+        rabbitsGraph.setYRange(0.0, 1000);
+        registerMediaProducer("Plot", rabbitsGraph);
 
         if (agentEnergyDistribution != null) {
             agentEnergyDistribution.dispose();
@@ -140,7 +148,8 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
         buildDisplay();
 
         displaySurf.display();
-        graph.display();
+        grassGraph.display();
+        rabbitsGraph.display();
         agentEnergyDistribution.display();
     }
 
@@ -207,7 +216,8 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 
         class UpdateGrassAndRabbitsInSpace extends BasicAction {
             public void execute() {
-                graph.step();
+                grassGraph.step();
+                rabbitsGraph.step();
             }
         }
         schedule.scheduleActionAtInterval(10, new UpdateGrassAndRabbitsInSpace());
@@ -236,8 +246,8 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
         displaySurf.addDisplayableProbeable(displayGrass, "Grass");
         displaySurf.addDisplayableProbeable(displayAgents, "Agents");
 
-        graph.addSequence("Grass In Space", new GrassInSpace());
-        graph.addSequence("Rabbits In Space", new RabbitsInSpace());
+        grassGraph.addSequence("Grass In Space", new GrassInSpace());
+        rabbitsGraph.addSequence("Rabbits In Space", new RabbitsInSpace());
 
         agentEnergyDistribution.createHistogramItem("Agent Energy", agentList, new AgentEnergy());
     }

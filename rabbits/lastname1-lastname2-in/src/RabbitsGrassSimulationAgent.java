@@ -15,27 +15,27 @@ public class RabbitsGrassSimulationAgent implements Drawable {
     private static int UNABLE_MOVES_BOUNDARY = 10;
 
     //class fields
-	private final int id;
-	private int x;
+    private final int id;
+    private int x;
     private int y;
     private int energy;
     private int birthFrequency;
-    private final float birthgivingLoss;
+    private final float birthGivingLoss;
     private int lifeTime;
     private int bornBabies;
     private int unableMoves;
 
     private RabbitsGrassSimulationSpace grassSpace;
 
-    public RabbitsGrassSimulationAgent(int minEnergy, int maxEnergy, float birthgivingLoss) {
+    public RabbitsGrassSimulationAgent(int minEnergy, int maxEnergy, float birthGivingLoss) {
         x = -1;
         y = -1;
         energy = (int) ((Math.random() * (maxEnergy - minEnergy)) + maxEnergy);
-		birthFrequency = 0;
-		lifeTime = 0;
-		bornBabies = 0;
-		unableMoves = 0;
-        this.birthgivingLoss = birthgivingLoss;
+        birthFrequency = 0;
+        lifeTime = 0;
+        bornBabies = 0;
+        unableMoves = 0;
+        this.birthGivingLoss = birthGivingLoss;
 
         id = ++agentID;
     }
@@ -44,15 +44,22 @@ public class RabbitsGrassSimulationAgent implements Drawable {
         arg0.drawFastRoundRect(Color.black);
     }
 
-    public int getX() { return x; }
-    public int getY() { return y; }
+    public int getX() {
+        return x;
+    }
+
+    public int getY() {
+        return y;
+    }
 
     public void setXY(int newX, int newY) {
         x = newX;
         y = newY;
     }
 
-    public int getEnergy() { return energy; }
+    public int getEnergy() {
+        return energy;
+    }
 
     public void step() {
         int dX, dY;
@@ -82,22 +89,20 @@ public class RabbitsGrassSimulationAgent implements Drawable {
         } else { // collision -> try again
             //FIXME stack can blow up and it did when I set e.g. frequency to 1
             // so Duda changed it to bounded depth, but try to find out an elegant way
-            if(unableMoves < UNABLE_MOVES_BOUNDARY) {
+            if (unableMoves < UNABLE_MOVES_BOUNDARY) {
                 unableMoves++;
                 this.step();
-            }
-            else {
+            } else {
                 energy--;
             }
         }
     }
 
     public void reproduce() {
-    	//energy -= birthLoss;
-        energy =(int) (1-birthgivingLoss) * energy;
-    	birthFrequency = 0;
-    	bornBabies++;
-	}
+        energy = (int) (1 - birthGivingLoss) * energy;
+        birthFrequency = 0;
+        bornBabies++;
+    }
 
     private boolean tryMove(int newX, int newY) {
         return grassSpace.didMoveAgentAt(x, y, newX, newY);
@@ -115,9 +120,9 @@ public class RabbitsGrassSimulationAgent implements Drawable {
                 "energy: " + energy);
     }
 
-	public int getBirthFrequency() {
-		return birthFrequency;
-	}
+    public int getBirthFrequency() {
+        return birthFrequency;
+    }
 
     public int getLifeTime() {
         return lifeTime;
