@@ -15,28 +15,22 @@ public class RabbitsGrassSimulationAgent implements Drawable {
     private static int UNABLE_MOVES_BOUNDARY = 10;
 
     //class fields
-	private final int id;
-	private int x;
-    private int y;
+	private int x = -1;
+    private int y = -1;
+    private int lifeTime = 0;
+    private int bornBabies = 0;
+    private int unableMoves = 0;
     private int energy;
-    private int birthFrequency;
+    private int birthFrequency = 0;
+    private final int id;
     private final float birthgivingLoss;
-    private int lifeTime;
-    private int bornBabies;
-    private int unableMoves;
+
 
     private RabbitsGrassSimulationSpace grassSpace;
 
     public RabbitsGrassSimulationAgent(int minEnergy, int maxEnergy, float birthgivingLoss) {
-        x = -1;
-        y = -1;
         energy = (int) ((Math.random() * (maxEnergy - minEnergy)) + maxEnergy);
-		birthFrequency = 0;
-		lifeTime = 0;
-		bornBabies = 0;
-		unableMoves = 0;
         this.birthgivingLoss = birthgivingLoss;
-
         id = ++agentID;
     }
 
@@ -80,8 +74,6 @@ public class RabbitsGrassSimulationAgent implements Drawable {
             birthFrequency++;
             unableMoves = 0;
         } else { // collision -> try again
-            //FIXME stack can blow up and it did when I set e.g. frequency to 1
-            // so Duda changed it to bounded depth, but try to find out an elegant way
             if(unableMoves < UNABLE_MOVES_BOUNDARY) {
                 unableMoves++;
                 this.step();
@@ -93,7 +85,6 @@ public class RabbitsGrassSimulationAgent implements Drawable {
     }
 
     public void reproduce() {
-    	//energy -= birthLoss;
         energy =(int) (1-birthgivingLoss) * energy;
     	birthFrequency = 0;
     	bornBabies++;

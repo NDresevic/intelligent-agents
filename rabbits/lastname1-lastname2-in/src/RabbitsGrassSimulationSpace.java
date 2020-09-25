@@ -118,4 +118,8 @@ public class RabbitsGrassSimulationSpace {
     public int getAgentsCount() {
         return agentsCount;
     }
+
+    public static int getGrassOnCellBoundary() {
+        return GRASS_ON_CELL_BOUNDARY;
+    }
 }
