@@ -1,3 +1,4 @@
+import uchicago.src.sim.analysis.*;
 import uchicago.src.sim.engine.Schedule;
 import uchicago.src.sim.engine.SimModelImpl;
 import uchicago.src.sim.engine.SimInit;
@@ -51,7 +52,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
     private static final int AGENT_MAX_ENERGY = 50;
     private static final int BABY_LIFE_SPAN = (AGENT_MAX_ENERGY + AGENT_MIN_ENERGY) / 2;
     private static final int BIRTH_FREQUENCY = 20;
-    private  static final float BIRTHGIVING_LOSS = 0.3f;
+    private static final float BIRTH_GIVING_LOSS = 0.3f;
 
     private int gridSize = GRID_SIZE;
     private int numInitRabbits = NUM_INIT_RABBITS;
@@ -62,7 +63,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
     private int birthThreshold = AGENT_MAX_ENERGY + 1;
     private int babyLifeSpan = BABY_LIFE_SPAN;
     private int birthFrequency = BIRTH_FREQUENCY;
-    private float birthgivingLoss = BIRTHGIVING_LOSS;
+    private float birthGivingLoss = BIRTH_GIVING_LOSS;
 
     //model
     private Schedule schedule;
@@ -76,6 +77,38 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
     private int deadAgents = 0;
     private static long startTime;
 
+    private OpenSequenceGraph graph;
+    private OpenHistogram agentEnergyDistribution;
+
+    class GrassInSpace implements DataSource, Sequence {
+
+        public Object execute() {
+            return getSValue();
+        }
+
+        public double getSValue() {
+            return grassSpace.getTotalGrassAmount();
+        }
+    }
+
+    class RabbitsInSpace implements DataSource, Sequence {
+
+        public Object execute() {
+            return getSValue();
+        }
+
+        public double getSValue() {
+            return grassSpace.getAgentsCount();
+        }
+    }
+
+    class AgentEnergy implements BinDataSource {
+        public double getBinValue(Object o) {
+            RabbitsGrassSimulationAgent agent = (RabbitsGrassSimulationAgent) o;
+            return agent.getEnergy();
+        }
+    }
+
     public void setup() {
         grassSpace = null;
         agentList = new CopyOnWriteArrayList<>();
@@ -86,13 +119,29 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
         }
         displaySurf = new DisplaySurface(this, "Rabbit Grass Model Window 1");
         registerDisplaySurface("Rabbit Grass Model Window 1", displaySurf);
+
+        if (graph != null) {
+            graph.dispose();
+        }
+        graph = new OpenSequenceGraph("Amount Of Grass and Rabbits In Space", this);
+        graph.setYRange(0.0, 1000);
+        registerMediaProducer("Plot", graph);
+
+        if (agentEnergyDistribution != null) {
+            agentEnergyDistribution.dispose();
+        }
+        agentEnergyDistribution = new OpenHistogram("Agent Energy", 50, 0);
+//        agentEnergyDistribution.setYRange(0, 100);
     }
 
     public void begin() {
         buildModel();
         buildSchedule();
         buildDisplay();
+
         displaySurf.display();
+        graph.display();
+        agentEnergyDistribution.display();
     }
 
     private void buildModel() {
@@ -122,7 +171,6 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
                     if (agent.getEnergy() > birthThreshold && agent.getBirthFrequency() > birthFrequency
                             //adding baby as an agent
                             && didAddNewAgentToList()) {
-                        // todo: specify the position of new born agent if we want
                         agent.reproduce();
                     }
                 }
@@ -134,9 +182,9 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
         schedule.scheduleActionBeginning(100, new SimulationStep());
 
         class CountLiving extends BasicAction {
-            public void execute(){
+            public void execute() {
                 int liveAgents = countLivingAgents();
-                if(liveAgents == 0){
+                if (liveAgents == 0) {
                     RabbitsGrassSimulationModel.this.stop();
                 }
             }
@@ -148,21 +196,36 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
             public void execute() {
                 System.out.println(
                         "\n\nAverage lifetime: " + averageLifeTime
-                        + "\nAverage babes born per rabbit: " + averageBornBabes
-                        + "\nPopulation size: " + RabbitsGrassSimulationAgent.getAgentID()
-                        + "\nSimulation duration: " + (System.nanoTime() - startTime)/ 1_000_000_000.0 + " seconds"
+                                + "\nAverage babes born per rabbit: " + averageBornBabes
+                                + "\nPopulation size: " + RabbitsGrassSimulationAgent.getAgentID()
+                                + "\nSimulation duration: " + (System.nanoTime() - startTime) / 1_000_000_000.0 + " seconds"
                 );
 
             }
         }
-
         schedule.scheduleActionAtEnd(new CalculateStatistics());
+
+        class UpdateGrassAndRabbitsInSpace extends BasicAction {
+            public void execute() {
+                graph.step();
+            }
+        }
+        schedule.scheduleActionAtInterval(10, new UpdateGrassAndRabbitsInSpace());
+
+        class UpdateAgentEnergy extends BasicAction {
+            public void execute() {
+                if (agentList.size() > 0) {
+                    agentEnergyDistribution.step();
+                }
+            }
+        }
+        schedule.scheduleActionAtInterval(10, new UpdateAgentEnergy());
     }
 
     private void buildDisplay() {
         ColorMap mapGrass = new ColorMap();
         for (int i = 1; i < 16; i++) {
-            mapGrass.mapColor(i, new Color(127 - i*8,  255 - i*8, 127 - i*8));
+            mapGrass.mapColor(i, new Color(127 - i * 8, 255 - i * 8, 127 - i * 8));
         }
         mapGrass.mapColor(0, Color.white);
 
@@ -172,16 +235,21 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 
         displaySurf.addDisplayableProbeable(displayGrass, "Grass");
         displaySurf.addDisplayableProbeable(displayAgents, "Agents");
+
+        graph.addSequence("Grass In Space", new GrassInSpace());
+        graph.addSequence("Rabbits In Space", new RabbitsInSpace());
+
+        agentEnergyDistribution.createHistogramItem("Agent Energy", agentList, new AgentEnergy());
     }
 
     private boolean didAddNewAgentToList() {
-        RabbitsGrassSimulationAgent a = new RabbitsGrassSimulationAgent(agentMinEnergy, agentMaxEnergy, birthgivingLoss);
-		if (!grassSpace.didAddAgentToSpace(a)) {
-		    System.err.println("Can't add new agent: " + a);
-		    return false;
-		}
+        RabbitsGrassSimulationAgent a = new RabbitsGrassSimulationAgent(agentMinEnergy, agentMaxEnergy, birthGivingLoss);
+        if (!grassSpace.didAddAgentToSpace(a)) {
+            System.err.println("Can't add new agent: " + a);
+            return false;
+        }
         agentList.add(a);
-		return true;
+        return true;
     }
 
     private int reapDeadAgents() {
@@ -193,8 +261,8 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
                 agentList.remove(agent);
                 System.out.println("Agent " + agent.getId() + " lived for " + agent.getLifeTime() + " steps and gave birth to " + agent.getBornBabies() + " babies.");
                 deadAgents++;
-                averageLifeTime += (agent.getLifeTime() - averageLifeTime)/deadAgents;
-                averageBornBabes += (agent.getBornBabies() - averageBornBabes)/deadAgents;
+                averageLifeTime += (agent.getLifeTime() - averageLifeTime) / deadAgents;
+                averageBornBabes += (agent.getBornBabies() - averageBornBabes) / deadAgents;
                 count++;
             }
         }
@@ -217,54 +285,95 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
     public String[] getInitParam() {
         // Parameters to be set by users via the Repast UI slider bar
         // Do "not" modify the parameters names provided in the skeleton code, you can add more if you want
-        return new String[]{"AgentMinLifespan", "AgentMaxLifespan", "GridSize", "NumInitRabbits", "NumInitGrass", "GrassGrowthRate", "BirthThreshold",
-                "BabyLifeSpan", "BirthFrequency", "BirthgivingLoss"};
-        //FIXME why I don't see min and max life span in setup?
+        return new String[]{"AgentMinEnergy", "AgentMaxEnergy", "GridSize", "NumInitRabbits", "NumInitGrass", "GrassGrowthRate", "BirthThreshold",
+                "BabyLifeSpan", "BirthFrequency", "BirthGivingLoss"};
     }
 
-    public String getName() { return "RabbitGrass"; }
+    public String getName() {
+        return "RabbitGrass";
+    }
 
-    public Schedule getSchedule() { return schedule; }
+    public Schedule getSchedule() {
+        return schedule;
+    }
 
-    public int getGridSize() { return gridSize; }
+    public int getGridSize() {
+        return gridSize;
+    }
 
-    public void setGridSize(int gridSize) { this.gridSize = gridSize; }
+    public void setGridSize(int gridSize) {
+        this.gridSize = gridSize;
+    }
 
-    public int getNumInitRabbits() { return numInitRabbits; }
+    public int getNumInitRabbits() {
+        return numInitRabbits;
+    }
 
-    public void setNumInitRabbits(int numInitRabbits) { this.numInitRabbits = numInitRabbits; }
+    public void setNumInitRabbits(int numInitRabbits) {
+        this.numInitRabbits = numInitRabbits;
+    }
 
-    public int getNumInitGrass() { return numInitGrass; }
+    public int getNumInitGrass() {
+        return numInitGrass;
+    }
 
-    public void setNumInitGrass(int numInitGrass) { this.numInitGrass = numInitGrass; }
+    public void setNumInitGrass(int numInitGrass) {
+        this.numInitGrass = numInitGrass;
+    }
 
-    public int getGrassGrowthRate() { return grassGrowthRate; }
+    public int getGrassGrowthRate() {
+        return grassGrowthRate;
+    }
 
-    public void setGrassGrowthRate(int grassGrowthRate) { this.grassGrowthRate = grassGrowthRate; }
+    public void setGrassGrowthRate(int grassGrowthRate) {
+        this.grassGrowthRate = grassGrowthRate;
+    }
 
-    public int getBirthThreshold() { return birthThreshold; }
+    public int getBirthThreshold() {
+        return birthThreshold;
+    }
 
-    public void setBirthThreshold(int birthThreshold) { this.birthThreshold = birthThreshold; }
+    public void setBirthThreshold(int birthThreshold) {
+        this.birthThreshold = birthThreshold;
+    }
 
-    public int getBabyLifeSpan() { return babyLifeSpan; }
+    public int getBabyLifeSpan() {
+        return babyLifeSpan;
+    }
 
-    public void setBabyLifeSpan(int babyLifeSpan) { this.babyLifeSpan = babyLifeSpan; }
+    public void setBabyLifeSpan(int babyLifeSpan) {
+        this.babyLifeSpan = babyLifeSpan;
+    }
 
-    public int getAgentMinEnergy() { return agentMinEnergy; }
+    public int getAgentMinEnergy() {
+        return agentMinEnergy;
+    }
 
-    public void setAgentMinEnergy(int agentMinEnergy) { this.agentMinEnergy = agentMinEnergy; }
+    public void setAgentMinEnergy(int agentMinEnergy) {
+        this.agentMinEnergy = agentMinEnergy;
+    }
 
-    public int getAgentMaxEnergy() { return agentMaxEnergy; }
+    public int getAgentMaxEnergy() {
+        return agentMaxEnergy;
+    }
 
-    public void setAgentMaxEnergy(int agentMaxEnergy) { this.agentMaxEnergy = agentMaxEnergy; }
+    public void setAgentMaxEnergy(int agentMaxEnergy) {
+        this.agentMaxEnergy = agentMaxEnergy;
+    }
 
-    public int getBirthFrequency() { return birthFrequency; }
+    public int getBirthFrequency() {
+        return birthFrequency;
+    }
 
-    public void setBirthFrequency(int birthFrequency) { this.birthFrequency = birthFrequency; }
+    public void setBirthFrequency(int birthFrequency) {
+        this.birthFrequency = birthFrequency;
+    }
 
-    public float getBirthgivingLoss() { return birthgivingLoss; }
+    public float getBirthGivingLoss() {
+        return birthGivingLoss;
+    }
 
-    public void setBirthgivingLoss(float birthgivingLoss) { this.birthgivingLoss = birthgivingLoss; }
-
-
+    public void setBirthGivingLoss(float birthGivingLoss) {
+        this.birthGivingLoss = birthGivingLoss;
+    }
 }

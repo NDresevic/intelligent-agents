@@ -5,11 +5,13 @@ import uchicago.src.sim.space.Object2DGrid;
  */
 public class RabbitsGrassSimulationSpace {
 
+    private static final int GRASS_ON_CELL_BOUNDARY = 16;
+
     private Object2DGrid grassSpace;
     private Object2DGrid agentSpace;
-    // todo: check if we need to have x and y size separately?
     private int gridSize;
-    public static final int GRASS_ON_CELL_BOUNDARY = 16;
+    private int totalGrassAmount;
+    private int agentsCount;
 
     public RabbitsGrassSimulationSpace(int xSize, int ySize) {
         grassSpace = new Object2DGrid(xSize, ySize);
@@ -20,6 +22,8 @@ public class RabbitsGrassSimulationSpace {
             }
         }
         gridSize = xSize;
+        totalGrassAmount = 0;
+        agentsCount = 0;
     }
 
     public void growGrass(int grass) {
@@ -30,14 +34,13 @@ public class RabbitsGrassSimulationSpace {
             int y = (int) (Math.random() * grassSpace.getSizeY());
 
             // Get the value of the object at those coordinates
-            //
             int currentValue = getGrassAt(x, y);
 
 
             // Replace the Integer object with another one with the new value
-            // todo: check if we want to add random amounts of grass instead of 1 unit each time?
-            //  Duda: I think it's fine since grow grass is called with grass growth rate parameter
-            grassSpace.putObjectAt(x, y, Math.min(currentValue + 1, GRASS_ON_CELL_BOUNDARY));
+            int newGrassAmount = Math.min(currentValue + 1, GRASS_ON_CELL_BOUNDARY);
+            grassSpace.putObjectAt(x, y, newGrassAmount);
+            totalGrassAmount += newGrassAmount - currentValue;
         }
     }
 
@@ -45,7 +48,9 @@ public class RabbitsGrassSimulationSpace {
         return grassSpace.getObjectAt(x, y) == null ? 0 : (Integer) grassSpace.getObjectAt(x, y);
     }
 
-    public Object2DGrid getCurrentGrassSpace() { return grassSpace; }
+    public Object2DGrid getCurrentGrassSpace() {
+        return grassSpace;
+    }
 
     private boolean isCellOccupied(int x, int y) {
         return agentSpace.getObjectAt(x, y) != null;
@@ -65,6 +70,7 @@ public class RabbitsGrassSimulationSpace {
                     agentSpace.putObjectAt(x, y, agent);
                     agent.setXY(x, y);
                     agent.setGrassSpace(this);
+                    agentsCount++;
                     retVal = true;
                 }
             }
@@ -79,12 +85,14 @@ public class RabbitsGrassSimulationSpace {
     }
 
     public void removeAgentAt(int x, int y) {
+        agentsCount--;
         agentSpace.putObjectAt(x, y, null);
     }
 
     public int removeGrassAt(int x, int y) {
         int grassAmount = getGrassAt(x, y);
         grassSpace.putObjectAt(x, y, 0);
+        totalGrassAmount -= grassAmount;
         return grassAmount;
     }
 
@@ -101,5 +109,13 @@ public class RabbitsGrassSimulationSpace {
 
     public int getGridSize() {
         return gridSize;
+    }
+
+    public int getTotalGrassAmount() {
+        return totalGrassAmount;
+    }
+
+    public int getAgentsCount() {
+        return agentsCount;
     }
 }
