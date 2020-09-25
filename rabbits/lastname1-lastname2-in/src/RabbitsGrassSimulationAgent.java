@@ -15,7 +15,7 @@ public class RabbitsGrassSimulationAgent implements Drawable {
     private static int UNABLE_MOVES_BOUNDARY = 10;
 
     //class fields
-	private int x = -1;
+    private int x = -1;
     private int y = -1;
     private int lifeTime = 0;
     private int bornBabies = 0;
@@ -23,14 +23,14 @@ public class RabbitsGrassSimulationAgent implements Drawable {
     private int energy;
     private int birthFrequency = 0;
     private final int id;
-    private final float birthgivingLoss;
+    private final float birthGivingLoss;
 
 
     private RabbitsGrassSimulationSpace grassSpace;
 
-    public RabbitsGrassSimulationAgent(int minEnergy, int maxEnergy, float birthgivingLoss) {
+    public RabbitsGrassSimulationAgent(int minEnergy, int maxEnergy, float birthGivingLoss) {
         energy = (int) ((Math.random() * (maxEnergy - minEnergy)) + maxEnergy);
-        this.birthgivingLoss = birthgivingLoss;
+        this.birthGivingLoss = birthGivingLoss;
         id = ++agentID;
     }
 
@@ -38,15 +38,22 @@ public class RabbitsGrassSimulationAgent implements Drawable {
         arg0.drawFastRoundRect(Color.black);
     }
 
-    public int getX() { return x; }
-    public int getY() { return y; }
+    public int getX() {
+        return x;
+    }
+
+    public int getY() {
+        return y;
+    }
 
     public void setXY(int newX, int newY) {
         x = newX;
         y = newY;
     }
 
-    public int getEnergy() { return energy; }
+    public int getEnergy() {
+        return energy;
+    }
 
     public void step() {
         int dX, dY;
@@ -74,7 +81,7 @@ public class RabbitsGrassSimulationAgent implements Drawable {
             birthFrequency++;
             unableMoves = 0;
         } else { // collision -> try again
-            if(unableMoves < UNABLE_MOVES_BOUNDARY) {
+            if (unableMoves < UNABLE_MOVES_BOUNDARY) {
                 unableMoves++;
                 this.step();
             } else {
@@ -84,10 +91,10 @@ public class RabbitsGrassSimulationAgent implements Drawable {
     }
 
     public void reproduce() {
-        energy =(int) (1-birthgivingLoss) * energy;
-    	birthFrequency = 0;
-    	bornBabies++;
-	}
+        energy = (int) (1 - birthGivingLoss) * energy;
+        birthFrequency = 0;
+        bornBabies++;
+    }
 
     private boolean tryMove(int newX, int newY) {
         return grassSpace.didMoveAgentAt(x, y, newX, newY);
