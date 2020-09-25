@@ -1,33 +1,26 @@
 import uchicago.src.sim.analysis.*;
-import uchicago.src.sim.engine.Schedule;
-import uchicago.src.sim.engine.SimModelImpl;
-import uchicago.src.sim.engine.SimInit;
 import uchicago.src.sim.engine.BasicAction;
-import uchicago.src.sim.gui.DisplaySurface;
+import uchicago.src.sim.engine.Schedule;
+import uchicago.src.sim.engine.SimInit;
+import uchicago.src.sim.engine.SimModelImpl;
 import uchicago.src.sim.gui.ColorMap;
-import uchicago.src.sim.gui.Value2DDisplay;
+import uchicago.src.sim.gui.DisplaySurface;
 import uchicago.src.sim.gui.Object2DDisplay;
+import uchicago.src.sim.gui.Value2DDisplay;
 import uchicago.src.sim.util.SimUtilities;
 
-import java.awt.Color;
-import java.util.ArrayList;
+import java.awt.*;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Class that implements the simulation model for the rabbits grass
  * simulation.  This is the first class which needs to be setup in
  * order to run Repast simulation. It manages the entire RePast
  * environment and the simulation.
+ *
+ * @author Nevena Dresevic & Dubravka Kutlesic
  */
-
-//FIXME
-//    1. I don't see parameters min and max life span in parameter list
-//      2. arbitrary units of grass on each cell -> think it's fine, check it
-//      3. invalid argument values
-//      4. noticed big fluctuations in results for the same parameter values
 
 public class RabbitsGrassSimulationModel extends SimModelImpl {
 
@@ -143,6 +136,8 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
     }
 
     public void begin() {
+        checkParameters();
+
         buildModel();
         buildSchedule();
         buildDisplay();
@@ -234,8 +229,8 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 
     private void buildDisplay() {
         ColorMap mapGrass = new ColorMap();
-        for (int i = 1; i < 16; i++) {
-            mapGrass.mapColor(i, new Color(127 - i * 8, 255 - i * 8, 127 - i * 8));
+        for (int i = 1; i < RabbitsGrassSimulationSpace.getGrassOnCellBoundary(); i++) {
+            mapGrass.mapColor(i, new Color(0, 127 + 127 / i, 0));
         }
         mapGrass.mapColor(0, Color.white);
 
@@ -385,5 +380,41 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 
     public void setBirthGivingLoss(float birthGivingLoss) {
         this.birthGivingLoss = birthGivingLoss;
+    }
+
+    private void checkParameters() {
+        if (numInitRabbits < 0) {
+            numInitRabbits = 0;
+            System.err.println("Number of initial rabbits must be non-negative number. Parameter NumInitRabbits set to 0");
+        }
+        if (numInitGrass < 0) {
+            numInitGrass = 0;
+            System.err.println("Number of initial grass must be non-negative number. Parameter NumInitRabbits set to 0");
+        }
+        if (agentMinEnergy < 0) {
+            agentMinEnergy = 1;
+            System.err.println("Agent min energy must be positive number. Parameter AgentMinEnergy set to 1");
+        }
+        if (agentMaxEnergy < agentMinEnergy) {
+            agentMaxEnergy = agentMinEnergy;
+            System.err.println("Agent max energy can not be lower than min agent energy. Parameter AgentMaxEnergy set to "
+                    + agentMinEnergy + " (min agent energy)");
+        }
+        if (birthGivingLoss > 1) {
+            birthGivingLoss = 1;
+            System.err.println("Birthgiving loss must be in [0,1]. Parameter BirthgivingLoss set to 1");
+        }
+        if (babyLifeSpan < 1) {
+            babyLifeSpan = 1;
+            System.err.println("Baby life span must be positive number. Parameter BabyLifeSpan set to 1");
+        }
+        if (birthFrequency < 1 || birthFrequency < 0) {
+            birthFrequency = 1;
+            System.err.println("Birth Frequency span must be positive number. Parameter BirthFrequency set to 1");
+        }
+        if (grassGrowthRate < 0) {
+            grassGrowthRate = 0;
+            System.err.println("Grass Growth Rate must be non-negative number. Parameter GrassGrowthRate set to 0");
+        }
     }
 }
