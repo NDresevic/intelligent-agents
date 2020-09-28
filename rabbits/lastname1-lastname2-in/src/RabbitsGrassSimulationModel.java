@@ -92,7 +92,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
         }
 
         public double getSValue() {
-            return grassSpace.getAgentsCount();
+            return agentList.size();
         }
     }
 
@@ -118,21 +118,22 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
             grassGraph.dispose();
         }
         grassGraph = new OpenSequenceGraph("Amount of Grass In Space", this);
-        grassGraph.setYRange(0.0, 1000);
+        grassGraph.setYRange(0, 100);
         registerMediaProducer("Plot", grassGraph);
 
         if (rabbitsGraph != null) {
             rabbitsGraph.dispose();
         }
         rabbitsGraph = new OpenSequenceGraph("Amount of Rabbits In Space", this);
-        rabbitsGraph.setYRange(0.0, 1000);
+        rabbitsGraph.setYRange(0, 50);
         registerMediaProducer("Plot", rabbitsGraph);
 
         if (agentEnergyDistribution != null) {
             agentEnergyDistribution.dispose();
         }
         agentEnergyDistribution = new OpenHistogram("Agent Energy", 50, 0);
-//        agentEnergyDistribution.setYRange(0, 100);
+
+        RabbitsGrassSimulationAgent.resetAgentID();
     }
 
     public void begin() {
@@ -167,17 +168,15 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
                 SimUtilities.shuffle(agentList);
                 for (RabbitsGrassSimulationAgent agent : agentList) {
                     agent.step();
-                }
 
-                int toBeDeadAgents = reapDeadAgents();
-
-                for (RabbitsGrassSimulationAgent agent : agentList) {
                     if (agent.getEnergy() > birthThreshold && agent.getBirthFrequency() > birthFrequency
                             //adding baby as an agent
                             && didAddNewAgentToList()) {
                         agent.reproduce();
                     }
                 }
+
+                int toBeDeadAgents = reapDeadAgents();
 
                 displaySurf.updateDisplay();
                 grassSpace.growGrass(grassGrowthRate);
@@ -276,7 +275,6 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 
     private int countLivingAgents() {
         int livingAgents = 0;
-        // todo: thread safe? -> Duda: I think yes, cuz each Action is different thread
         for (RabbitsGrassSimulationAgent agent : agentList) {
             if (agent.getEnergy() > 0) {
                 livingAgents++;

@@ -3,7 +3,6 @@ import uchicago.src.sim.gui.SimGraphics;
 import uchicago.src.sim.space.Object2DGrid;
 
 import java.util.Random;
-
 import java.awt.Color;
 
 /**
@@ -32,6 +31,10 @@ public class RabbitsGrassSimulationAgent implements Drawable {
         energy = (int) ((Math.random() * (maxEnergy - minEnergy)) + maxEnergy);
         this.birthGivingLoss = birthGivingLoss;
         id = ++agentID;
+    }
+
+    public static void resetAgentID() {
+        agentID = 0;
     }
 
     public void draw(SimGraphics arg0) {
@@ -67,11 +70,9 @@ public class RabbitsGrassSimulationAgent implements Drawable {
             dY = 0;
         }
 
-        int newX = (x + dX) % grassSpace.getGridSize();
-        int newY = (y + dY) % grassSpace.getGridSize();
         Object2DGrid grid = grassSpace.getCurrentAgentSpace();
-        newX = (newX + grid.getSizeX()) % grid.getSizeX();
-        newY = (newY + grid.getSizeY()) % grid.getSizeY();
+        int newX = (x + dX + grid.getSizeX()) % grid.getSizeX();
+        int newY = (y + dY + grid.getSizeY()) % grid.getSizeY();
 
         energy--;
         lifeTime++;
@@ -80,13 +81,9 @@ public class RabbitsGrassSimulationAgent implements Drawable {
             energy += grassSpace.removeGrassAt(x, y);
             birthFrequency++;
             unableMoves = 0;
-        } else { // collision -> try again
-            if (unableMoves < UNABLE_MOVES_BOUNDARY) {
-                unableMoves++;
-                this.step();
-            } else {
-                energy--;
-            }
+        } else if (unableMoves < UNABLE_MOVES_BOUNDARY) { // collision -> try again for UNABLE_MOVES_BOUNDARY
+            unableMoves++;
+            this.step();
         }
     }
 

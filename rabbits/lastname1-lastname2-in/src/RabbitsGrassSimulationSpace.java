@@ -11,7 +11,6 @@ public class RabbitsGrassSimulationSpace {
     private Object2DGrid agentSpace;
     private int gridSize;
     private int totalGrassAmount;
-    private int agentsCount;
 
     public RabbitsGrassSimulationSpace(int xSize, int ySize) {
         grassSpace = new Object2DGrid(xSize, ySize);
@@ -23,7 +22,6 @@ public class RabbitsGrassSimulationSpace {
         }
         gridSize = xSize;
         totalGrassAmount = 0;
-        agentsCount = 0;
     }
 
     public void growGrass(int grass) {
@@ -35,7 +33,6 @@ public class RabbitsGrassSimulationSpace {
 
             // Get the value of the object at those coordinates
             int currentValue = getGrassAt(x, y);
-
 
             // Replace the Integer object with another one with the new value
             int newGrassAmount = Math.min(currentValue + 1, GRASS_ON_CELL_BOUNDARY);
@@ -59,8 +56,7 @@ public class RabbitsGrassSimulationSpace {
     public boolean didAddAgentToSpace(RabbitsGrassSimulationAgent agent) {
         boolean retVal = false;
         int count = 0;
-        // todo: change this check?
-        int countLimit = agentSpace.getSizeX() * agentSpace.getSizeY() * 2 / 3;
+        int countLimit = (int) (agentSpace.getSizeX() * agentSpace.getSizeY() * 0.7);
 
         while (!retVal && (count < countLimit)) {
             int x = (int) (Math.random() * agentSpace.getSizeX());
@@ -70,7 +66,6 @@ public class RabbitsGrassSimulationSpace {
                     agentSpace.putObjectAt(x, y, agent);
                     agent.setXY(x, y);
                     agent.setGrassSpace(this);
-                    agentsCount++;
                     retVal = true;
                 }
             }
@@ -85,7 +80,6 @@ public class RabbitsGrassSimulationSpace {
     }
 
     public void removeAgentAt(int x, int y) {
-        agentsCount--;
         agentSpace.putObjectAt(x, y, null);
     }
 
@@ -103,7 +97,6 @@ public class RabbitsGrassSimulationSpace {
         RabbitsGrassSimulationAgent agent = (RabbitsGrassSimulationAgent) agentSpace.getObjectAt(x, y);
         removeAgentAt(x, y);
         agent.setXY(newX, newY);
-        agentsCount++;
         agentSpace.putObjectAt(newX, newY, agent);
         return true;
     }
@@ -114,10 +107,6 @@ public class RabbitsGrassSimulationSpace {
 
     public int getTotalGrassAmount() {
         return totalGrassAmount;
-    }
-
-    public int getAgentsCount() {
-        return agentsCount;
     }
 
     public static int getGrassOnCellBoundary() {
