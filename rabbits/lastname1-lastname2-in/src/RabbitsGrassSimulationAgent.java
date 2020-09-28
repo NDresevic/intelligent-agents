@@ -28,7 +28,13 @@ public class RabbitsGrassSimulationAgent implements Drawable {
     private RabbitsGrassSimulationSpace grassSpace;
 
     public RabbitsGrassSimulationAgent(int minEnergy, int maxEnergy, float birthGivingLoss) {
-        energy = (int) ((Math.random() * (maxEnergy - minEnergy)) + maxEnergy);
+        energy = (int) ((Math.random() * (maxEnergy - minEnergy)) + minEnergy);
+        this.birthGivingLoss = birthGivingLoss;
+        id = ++agentID;
+    }
+
+    public RabbitsGrassSimulationAgent(int babyLifeSpan, float birthGivingLoss) {
+        energy = babyLifeSpan;
         this.birthGivingLoss = birthGivingLoss;
         id = ++agentID;
     }
@@ -88,7 +94,7 @@ public class RabbitsGrassSimulationAgent implements Drawable {
     }
 
     public void reproduce() {
-        energy = (int) (1 - birthGivingLoss) * energy;
+        energy = (int) ((1 - birthGivingLoss) * energy);
         birthFrequency = 0;
         bornBabies++;
     }

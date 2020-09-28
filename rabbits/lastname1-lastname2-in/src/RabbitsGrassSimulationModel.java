@@ -40,7 +40,6 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
     private static final int NUM_INIT_RABBITS = 40;
     private static final int NUM_INIT_GRASS = 10;
     private static final int GRASS_GROWTH_RATE = 10;
-    //private static final int BIRTH_THRESHOLD = 45;
     private static final int AGENT_MIN_ENERGY = 30;
     private static final int AGENT_MAX_ENERGY = 50;
     private static final int BABY_LIFE_SPAN = (AGENT_MAX_ENERGY + AGENT_MIN_ENERGY) / 2;
@@ -154,7 +153,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
         grassSpace.growGrass(numInitGrass);
 
         for (int i = 0; i < numInitRabbits; i++) {
-            didAddNewAgentToList();
+            didAddNewAgentToList(false);
         }
 
         for (RabbitsGrassSimulationAgent agent : agentList) {
@@ -171,7 +170,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 
                     if (agent.getEnergy() > birthThreshold && agent.getBirthFrequency() > birthFrequency
                             //adding baby as an agent
-                            && didAddNewAgentToList()) {
+                            && didAddNewAgentToList(true)) {
                         agent.reproduce();
                     }
                 }
@@ -246,8 +245,13 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
         agentEnergyDistribution.createHistogramItem("Agent Energy", agentList, new AgentEnergy());
     }
 
-    private boolean didAddNewAgentToList() {
-        RabbitsGrassSimulationAgent a = new RabbitsGrassSimulationAgent(agentMinEnergy, agentMaxEnergy, birthGivingLoss);
+    private boolean didAddNewAgentToList(boolean baby) {
+        RabbitsGrassSimulationAgent a;
+        if (baby) {
+            a = new RabbitsGrassSimulationAgent(babyLifeSpan, birthGivingLoss);
+        } else {
+            a = new RabbitsGrassSimulationAgent(agentMinEnergy, agentMaxEnergy, birthGivingLoss);
+        }
         if (!grassSpace.didAddAgentToSpace(a)) {
             System.err.println("Can't add new agent: " + a);
             return false;
