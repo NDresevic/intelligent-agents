@@ -1,0 +1,14 @@
+<component name="libraryTable">
+  <library name="lib">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/logist/lib/jsolver.jar!/" />
+      <root url="jar://$PROJECT_DIR$/logist/lib/repast.jar!/" />
+      <root url="jar://$PROJECT_DIR$/logist/lib/plot.jar!/" />
+      <root url="jar://$PROJECT_DIR$/logist/lib/jdom.jar!/" />
+      <root url="jar://$PROJECT_DIR$/logist/lib/colt.jar!/" />
+      <root url="jar://$PROJECT_DIR$/logist/lib/commons-math-1.1.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
