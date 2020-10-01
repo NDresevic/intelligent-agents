@@ -1,4 +1,4 @@
-package template;
+package agents;
 
 import logist.agent.Agent;
 import logist.behavior.ReactiveBehavior;
@@ -8,15 +8,28 @@ import logist.task.Task;
 import logist.task.TaskDistribution;
 import logist.topology.Topology;
 import logist.topology.Topology.City;
+import model.State;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Vector;
 
 public class ReactiveAgent implements ReactiveBehavior {
 
     private static final Double NO_REWARD = null;
+    private double discountFactor;
+
+    private List<State> states;
+    private List<Integer> actions;
+    private Topology topology;
+
+    private Map<State, Map<Integer, Double>> R;
+    private Map<State, Map<Integer, Map<State, Double>>> T;
 
     @Override
     public void setup(Topology topology, TaskDistribution distribution, Agent agent) {
+        discountFactor = agent.readProperty("discount-factor", Double.class, 0.95);
+
         //creating set of states
         Vector<State> states = new Vector<>();
         //I am in the sourceCity and there exists a packet for the destinationCity (size = num_of_cities^2)
@@ -43,15 +56,15 @@ public class ReactiveAgent implements ReactiveBehavior {
             State state = states.get(i);
             int transitPrice = agent.vehicles().get(0).costPerKm();
             //accepting a task
-            R[i][numberOfActions - 1] = distribution.reward(state.sourceCity, state.destinationCity)
-                    - transitPrice * state.sourceCity.distanceTo(state.destinationCity);
+            R[i][numberOfActions - 1] = distribution.reward(state.getCurrentCity(), state.getTaskCity())
+                    - transitPrice * state.getCurrentCity().distanceTo(state.getTaskCity());
             //no task or refuse a task
             for (int j = 0; j < numberOfActions - 1; j++) {
                 City nextCity = topology.cities().get(j);
-                if (state.sourceCity.hasNeighbor(nextCity)
+                if (state.getCurrentCity().hasNeighbor(nextCity)
                         //delete this if I am not the neighbor to myself
-                        && state.sourceCity.id != nextCity.id) {
-                    R[i][j] = -transitPrice * state.sourceCity.distanceTo(nextCity);
+                        && state.getCurrentCity().id != nextCity.id) {
+                    R[i][j] = -transitPrice * state.getCurrentCity().distanceTo(nextCity);
                 } else
                     R[i][j] = NO_REWARD;
 
@@ -74,16 +87,16 @@ public class ReactiveAgent implements ReactiveBehavior {
         for (int i = 0; i < numberOfStates; i++) {
             State initialState = states.get(i);
             //action = accept a package
-            if (initialState.destinationCity != null) {
-                T[i][numberOfActions - 1][states.indexOf(new State(initialState.destinationCity, null))]
-                        = probNoPackets[topology.cities().indexOf(initialState.destinationCity)];
+            if (initialState.getTaskCity() != null) {
+                T[i][numberOfActions - 1][states.indexOf(new State(initialState.getTaskCity(), null))]
+                        = probNoPackets[topology.cities().indexOf(initialState.getTaskCity())];
             } else {
                 //TODO this is hard part because we need to calculate these probabilities on paper
                 //  if I decide to go to the city i to deliver the packet I might end up in many states
                 //  e.g. (i, have packet for 1), (i, have packet for 2) ..
                 for (City packetForCity : topology.cities()) {
                     //FIXME
-                    T[i][numberOfActions - 1][states.indexOf(new State(initialState.destinationCity, packetForCity))] = 0d;
+                    T[i][numberOfActions - 1][states.indexOf(new State(initialState.getTaskCity(), packetForCity))] = 0d;
                 }
             }
 
@@ -93,12 +106,11 @@ public class ReactiveAgent implements ReactiveBehavior {
                     //but again we have many possibilities for states e.g. (i, have packet for 1), (i, have packet for 2)...
                     for (City packetForCity : topology.cities()) {
                         //FIXME
-                        T[i][j][states.indexOf(new State(initialState.destinationCity, packetForCity))] = 0d;
+                        T[i][j][states.indexOf(new State(initialState.getTaskCity(), packetForCity))] = 0d;
                     }
             }
         }
     }
-
 
     @Override
     public Action act(Vehicle vehicle, Task availableTask) {
