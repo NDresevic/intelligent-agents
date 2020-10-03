@@ -1,7 +1,7 @@
-package reinforcement_learning;
+package agents;
 
 import logist.topology.Topology;
-import model.State;
+import agents.State;
 
 import java.util.HashMap;
 import java.util.List;
@@ -9,12 +9,11 @@ import java.util.Map;
 
 public class ReinforcementLearningAlgorithm {
 
-    private static double EPSILON = 0.0000001d;
-
     private List<State> states;
     private List<Integer> actions;
     private Topology topology;
     private double discountFactor;
+    private double epsilon;
 
     private Map<State, Map<Integer, Double>> R;
     private Map<State, Map<Integer, Map<State, Double>>> T;
@@ -26,12 +25,13 @@ public class ReinforcementLearningAlgorithm {
     private Map<State, Map<Integer, Double>> Q;
 
     public ReinforcementLearningAlgorithm(List<State> states, List<Integer> actions, Topology topology,
-                                          double discountFactor, Map<State, Map<Integer, Double>> R,
-                                          Map<State, Map<Integer, Map<State, Double>>> T) {
+                                          double discountFactor, double epsilon, Map<State,
+                                        Map<Integer, Double>> R, Map<State, Map<Integer, Map<State, Double>>> T) {
         this.states = states;
         this.actions = actions;
         this.topology = topology;
         this.discountFactor = discountFactor;
+        this.epsilon = epsilon;
         this.R = R;
         this.T = T;
 
@@ -43,7 +43,7 @@ public class ReinforcementLearningAlgorithm {
             Q.put(state, new HashMap<>());
 
             for (Integer action: this.actions) {
-                if (state.isActionPossible(action, topology)) {
+                if (ReactiveAgent.isActionPossible(state, action, topology)) {
                     Q.get(state).put(action, 0.0);
                 }
             }
@@ -76,7 +76,7 @@ public class ReinforcementLearningAlgorithm {
                 }
 
                 //  algorithm stops whenever there is no more a change in V
-                if (Math.abs(V.get(state) - bestValue) < EPSILON) {
+                if (Math.abs(V.get(state) - bestValue) < epsilon) {
                     break;
                 }
 

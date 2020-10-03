@@ -1,4 +1,4 @@
-package model;
+package agents;
 
 import logist.topology.Topology;
 import logist.topology.Topology.City;
@@ -30,15 +30,7 @@ public class State {
     public static List<State> getAllNextStates(Integer action, Topology topology) {
         return new ArrayList<>();
     }
-    
-    //if identificationOfDestinationCity is null, then desired action is accepting the packet
-    //otherwise desired action is to move to the city with identificationOfNextCity
-    public boolean isActionPossible(Integer actionID, Topology topology) {
-        if (actionID == null) {  // there are no packets
-            return this.taskCity != null;
-        }
-        return this.currentCity.hasNeighbor(topology.cities().get(actionID));
-    }
+
 
     @Override
     public boolean equals(Object o) {

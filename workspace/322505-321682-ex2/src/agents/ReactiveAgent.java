@@ -17,7 +17,7 @@ import java.util.Map;
 public class ReactiveAgent implements ReactiveBehavior {
 
     private static final Double NO_REWARD = null;
-    private static final Integer ACCEPT_TASK = -1;
+    protected static final Integer ACCEPT_TASK = -1;
 
     private double discountFactor;
     private double epsilon;
@@ -86,12 +86,27 @@ public class ReactiveAgent implements ReactiveBehavior {
         actions.add(ACCEPT_TASK);
     }
 
-    private City getCityById(int id, Topology topology) {
+    public static City getCityById(int id, Topology topology) {
         for (City city : topology.cities()) {
             if (city.id == id)
                 return city;
         }
         return null;
+    }
+
+    /**
+     * @param state
+     * @param action
+     * @param topology
+     * @return
+     */
+    public static boolean isActionPossible(State state, Integer action, Topology topology) {
+        if (action == ACCEPT_TASK) {  // there are no packets
+            //Accepting is possible if there is a packet to be delivered
+            return state.getTaskCity() != null;
+        }
+        //Refusing or simply moving to another city is possible if it is neighboring city
+        return state.getCurrentCity().hasNeighbor(getCityById(action, topology));
     }
 
     /**
@@ -148,35 +163,33 @@ public class ReactiveAgent implements ReactiveBehavior {
                 probNoPackets[i] *= 1 - distribution.probability(topology.cities().get(i), topology.cities().get(j));
         }
 
-        //FIXME DUDA
         for (State initialState : states) {
-            //action = accept a package
-            if (initialState.getTaskCity() != null) {
-                T.get(initialState).get(ACCEPT_TASK).put(new State(initialState.getTaskCity(), null)
-                        , probNoPackets[topology.cities().indexOf(initialState.getTaskCity())]);
-            } else {
-                //TODO this is hard part because we need to calculate these probabilities on paper
-                //  if I decide to go to the city i to deliver the packet I might end up in many states
-                //  e.g. (i, have packet for 1), (i, have packet for 2) ..
-                for (City packetForCity : topology.cities()) {
-                    //FIXME
-                    T.get(initialState).get(ACCEPT_TASK).put(new State(initialState.getTaskCity(), packetForCity)
-                            , 0d);
+            for (Integer action : actions) {
+                for (State nextState : states) {
+                    //if the agent decides to accept the task, the destination city of the current state and
+                    //the current city of the next state must be the same
+                    if (action == ACCEPT_TASK && initialState.getTaskCity() == nextState.getCurrentCity()
+                            // if the agent decides to refuse the packet or there are no tasks he must end up in the desired city
+                            // (the destination of the desired action and the town the agent end up in must be the same)
+                            // and he must move to a neighboring city
+                            || action != ACCEPT_TASK && nextState.getCurrentCity().id == action
+                            && initialState.getCurrentCity().hasNeighbor(nextState.getCurrentCity())) {
+                        if (nextState.getTaskCity() != null)
+                            //there are no packets in the next state
+                            T.get(initialState).get(action).put(nextState, probNoPackets[action]);
+                        else
+                            T.get(initialState).get(action).
+                                    put(nextState, calculateProbability(nextState.getCurrentCity(), nextState.getTaskCity()));
+                    }
+
                 }
             }
-
-            for (Integer action : actions) {
-                //FIXME merge with ^^^^^^^^^^^^^
-                if (initialState.isActionPossible(action, topology))
-                    //if the agent decides to move to the neighbor i he will definitely end up in the neighbor city
-                    //but again we have many possibilities for states e.g. (i, have packet for 1), (i, have packet for 2)...
-                    for (City packetForCity : topology.cities()) {
-                        //FIXME
-                        T.get(initialState).get(action).put(new State(initialState.getTaskCity(), packetForCity)
-                                , 0d);
-                    }
-            }
         }
+    }
+
+    //TODO FIXME
+    private Double calculateProbability(City currentCity, City nextCity) {
+        return 0d;
     }
 
     @Override
