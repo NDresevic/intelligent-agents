@@ -191,8 +191,7 @@ public class ReactiveAgent implements ReactiveBehavior {
                             T.get(initialState).get(action).put(nextState, distribution.probability(nextState.getCurrentCity(), null));
                         } else {
                             T.get(initialState).get(action).
-                                    put(nextState, calculateProbability(distribution, nextState.getCurrentCity(), nextState.getTaskCity()));
-                        }
+                                    put(nextState, calculateProbability(distribution, nextState.getCurrentCity(), nextState.getTaskCity(), topology));
                     }
 
                 }
@@ -200,10 +199,40 @@ public class ReactiveAgent implements ReactiveBehavior {
         }
     }
 
-    //TODO FIXME
-    private Double calculateProbability(TaskDistribution distribution, City currentCity, City nextCity) {
-        return 0d;
+
+    /**
+     * Calculate the probability that the agent in the city currentCity sees a packet
+     * for delivery to city nextCity
+     * According to the Logi
+     *
+     * @param distribution
+     * @param currentCity
+     * @param nextCity
+     * @return
+     */
+    private Double calculateProbability(TaskDistribution distribution, City currentCity, City nextCity, Topology topology) {
+        Double probability = 0d;
+        List<City> filteredCities = (List<City>) topology.cities().stream().filter(city -> !city.equals(currentCity) && !city.equals(nextCity));
+        String current = "0".repeat(filteredCities.size());
+        String finished = "1".repeat(filteredCities.size());
+        long numberOfCitiesInSubset;
+
+        while (current.equals(finished)) {
+            Double currentProbability = 1d;
+            for (int i = 0; i < current.length(); i++) {
+                if (current.charAt(i) == '1') {
+                    currentProbability *= distribution.probability(currentCity, filteredCities.get(i));
+                } else {
+                    currentProbability *= 1 - distribution.probability(currentCity, filteredCities.get(i));
+                }
+            }
+            numberOfCitiesInSubset = current.chars().filter(bit -> bit == '1').count();
+            probability += 1 / (numberOfCitiesInSubset + 1) * distribution.probability(currentCity, nextCity) * currentProbability;
+            current = Integer.toBinaryString(Integer.valueOf(current, 2) + 1);
+        }
+        return probability;
     }
+
 
     @Override
     public Action act(Vehicle vehicle, Task availableTask) {
