@@ -51,12 +51,11 @@ public class ReinforcementLearningAlgorithm {
         while (true) {
             for (State state : Q.keySet()) {
                 for (Integer action : Q.get(state).keySet()) {
-                    double sum = 0.0;
+                    double value = R.get(state).get(action);
                     for (State nextState: T.get(state).get(action).keySet()) {
-                        sum += discountFactor * T.get(state).get(action).get(nextState) * V.get(nextState);
+                        value += discountFactor * T.get(state).get(action).get(nextState) * V.get(nextState);
                     }
 
-                    double value = R.get(state).get(action) + sum;
                     Q.get(state).put(action, value);
                 }
 

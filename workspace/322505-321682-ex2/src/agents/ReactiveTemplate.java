@@ -38,8 +38,8 @@ public class ReactiveTemplate implements ReactiveBehavior {
 	public Action act(Vehicle vehicle, Task availableTask) {
 		Action action;
 
-		if (availableTask == null) {
-			City currentCity = vehicle.getCurrentCity();
+        if (availableTask == null || random.nextDouble() > pPickup) {
+            City currentCity = vehicle.getCurrentCity();
 			action = new Move(currentCity.randomNeighbor(random));
 		} else {
 			action = new Pickup(availableTask);
