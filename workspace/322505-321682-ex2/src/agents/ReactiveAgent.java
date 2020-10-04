@@ -9,7 +9,6 @@ import logist.task.TaskDistribution;
 import logist.topology.Topology;
 import logist.topology.Topology.City;
 
-import java.awt.desktop.SystemSleepEvent;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -234,7 +233,6 @@ public class ReactiveAgent implements ReactiveBehavior {
         }
         return probability;
     }
-
 
     @Override
     public Action act(Vehicle vehicle, Task availableTask) {

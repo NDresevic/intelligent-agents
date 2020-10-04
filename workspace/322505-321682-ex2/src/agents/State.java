@@ -1,10 +1,7 @@
 package agents;
 
-import logist.topology.Topology;
 import logist.topology.Topology.City;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 
 public class State {
@@ -22,12 +19,6 @@ public class State {
     public State(City currentCity) {
         this(currentCity, null);
     }
-
-    // todo: implement
-    public static List<State> getAllNextStates(Integer action, Topology topology) {
-        return new ArrayList<>();
-    }
-
 
     @Override
     public boolean equals(Object o) {

@@ -1,18 +1,14 @@
 package agents;
 
 import logist.topology.Topology;
-import agents.State;
 
-import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class ReinforcementLearningAlgorithm {
 
     private List<State> states;
     private List<Integer> actions;
-    private Topology topology;
     private double discountFactor;
     private double epsilon;
 
@@ -26,11 +22,10 @@ public class ReinforcementLearningAlgorithm {
     private Map<State, Map<Integer, Double>> Q;
 
     public ReinforcementLearningAlgorithm(List<State> states, List<Integer> actions, Topology topology,
-                                          double discountFactor, double epsilon, Map<State,
-            Map<Integer, Double>> R, Map<State, Map<Integer, Map<State, Double>>> T) {
+                                          double discountFactor, double epsilon, Map<State, Map<Integer, Double>> R,
+                                          Map<State, Map<Integer, Map<State, Double>>> T) {
         this.states = states;
         this.actions = actions;
-        this.topology = topology;
         this.discountFactor = discountFactor;
         this.epsilon = epsilon;
         this.R = R;
@@ -52,13 +47,13 @@ public class ReinforcementLearningAlgorithm {
     }
 
     public void reinforcementLearning() {
+        double maxDifference = 0.0;
 
         while (true) {
             for (State state : Q.keySet()) {
                 for (Integer action : Q.get(state).keySet()) {
                     double sum = 0.0;
-
-                    for (State nextState : State.getAllNextStates(action, topology)) {
+                    for (State nextState : getAllNextStatesForAction(action)) {
                         sum += discountFactor * T.get(state).get(action).get(nextState) * V.get(nextState);
                     }
 
@@ -76,26 +71,35 @@ public class ReinforcementLearningAlgorithm {
                     }
                 }
 
-                //  algorithm stops whenever there is no more a change in V
-                if (Math.abs(V.get(state) - bestValue) < epsilon) {
-                    break;
-                }
-
                 best.put(state, bestAction);
                 V.put(state, bestValue);
+                maxDifference = Math.max(Math.abs(V.get(state) - bestValue), maxDifference);
+            }
+
+            //  algorithm stops whenever there is no more a change in V
+            if (maxDifference < epsilon) {
+                break;
             }
         }
+        System.out.println("SSS");
+    }
+
+    private List<State> getAllNextStatesForAction(Integer action) {
+        List<State> returnStates = new ArrayList<>();
+
+        for (State state : states) {
+            if (action.equals(ReactiveAgent.ACCEPT_TASK)) {
+                if (state.getTaskCity() != null) {
+                    returnStates.addAll(states.stream().filter(s -> state.getTaskCity().equals(s.getCurrentCity())).collect(Collectors.toList()));
+                }
+            } else {
+                returnStates.addAll(states.stream().filter(s -> state.getCurrentCity().neighbors().contains(s.getCurrentCity())).collect(Collectors.toList()));
+            }
+        }
+        return returnStates;
     }
 
     public Map<State, Integer> getBest() {
         return best;
-    }
-
-    public Map<State, Double> getV() {
-        return V;
-    }
-
-    public Map<State, Map<Integer, Double>> getQ() {
-        return Q;
     }
 }
