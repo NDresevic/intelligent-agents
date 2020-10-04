@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class ReactiveAgent implements ReactiveBehavior {
 
@@ -192,8 +193,9 @@ public class ReactiveAgent implements ReactiveBehavior {
                         } else {
                             T.get(initialState).get(action).
                                     put(nextState, calculateProbability(distribution, nextState.getCurrentCity(), nextState.getTaskCity(), topology));
-                    }
+                        }
 
+                    }
                 }
             }
         }
@@ -212,7 +214,7 @@ public class ReactiveAgent implements ReactiveBehavior {
      */
     private Double calculateProbability(TaskDistribution distribution, City currentCity, City nextCity, Topology topology) {
         Double probability = 0d;
-        List<City> filteredCities = (List<City>) topology.cities().stream().filter(city -> !city.equals(currentCity) && !city.equals(nextCity));
+        List<City> filteredCities = topology.cities().stream().filter(city -> !city.equals(currentCity) && !city.equals(nextCity)).collect(Collectors.toList());
         String current = "0".repeat(filteredCities.size());
         String finished = "1".repeat(filteredCities.size());
         long numberOfCitiesInSubset;
