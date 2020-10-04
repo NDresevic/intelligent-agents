@@ -3,6 +3,7 @@ package agents;
 import logist.topology.Topology;
 import agents.State;
 
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,7 +27,7 @@ public class ReinforcementLearningAlgorithm {
 
     public ReinforcementLearningAlgorithm(List<State> states, List<Integer> actions, Topology topology,
                                           double discountFactor, double epsilon, Map<State,
-                                        Map<Integer, Double>> R, Map<State, Map<Integer, Map<State, Double>>> T) {
+            Map<Integer, Double>> R, Map<State, Map<Integer, Map<State, Double>>> T) {
         this.states = states;
         this.actions = actions;
         this.topology = topology;
@@ -38,11 +39,11 @@ public class ReinforcementLearningAlgorithm {
         best = new HashMap<>();
         V = new HashMap<>();
         Q = new HashMap<>();
-        for (State state: this.states) {
+        for (State state : this.states) {
             V.put(state, 0.0);
             Q.put(state, new HashMap<>());
 
-            for (Integer action: this.actions) {
+            for (Integer action : this.actions) {
                 if (ReactiveAgent.isActionPossible(state, action, topology)) {
                     Q.get(state).put(action, 0.0);
                 }
@@ -53,8 +54,8 @@ public class ReinforcementLearningAlgorithm {
     public void reinforcementLearning() {
 
         while (true) {
-            for (State state: Q.keySet()) {
-                for (Integer action: Q.get(state).keySet()) {
+            for (State state : Q.keySet()) {
+                for (Integer action : Q.get(state).keySet()) {
                     double sum = 0.0;
 
                     for (State nextState : State.getAllNextStates(action, topology)) {
@@ -67,7 +68,7 @@ public class ReinforcementLearningAlgorithm {
 
                 Integer bestAction = null;
                 double bestValue = Double.MIN_VALUE;
-                for (Integer action: Q.get(state).keySet()) {
+                for (Integer action : Q.get(state).keySet()) {
                     double currentValue = Q.get(state).get(action);
                     if (currentValue > bestValue) {
                         bestAction = action;

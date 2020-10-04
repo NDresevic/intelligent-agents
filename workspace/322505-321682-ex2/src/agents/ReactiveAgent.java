@@ -9,6 +9,7 @@ import logist.task.TaskDistribution;
 import logist.topology.Topology;
 import logist.topology.Topology.City;
 
+import java.awt.desktop.SystemSleepEvent;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -19,6 +20,9 @@ public class ReactiveAgent implements ReactiveBehavior {
     private static final Double NO_REWARD = null;
     protected static final Integer ACCEPT_TASK = -1;
 
+    private int numActions;
+    private Agent myAgent;
+
     private double discountFactor;
     private double epsilon;
 
@@ -28,10 +32,21 @@ public class ReactiveAgent implements ReactiveBehavior {
     private Map<State, Map<Integer, Double>> R;
     private Map<State, Map<Integer, Map<State, Double>>> T;
 
+    private Topology topology;
+    private ReinforcementLearningAlgorithm rla;
+
     @Override
     public void setup(Topology topology, TaskDistribution distribution, Agent agent) {
+        this.topology = topology;
         discountFactor = agent.readProperty("discount-factor", Double.class, 0.95);
         epsilon = agent.readProperty("epsilon", Double.class, 0.0001);
+        this.numActions = 0;
+        this.myAgent = agent;
+
+        this.states = new ArrayList<>();
+        this.actions = new ArrayList<>();
+        this.R = new HashMap<>();
+        this.T = new HashMap<>();
 
         makeStateSpace(topology);
         makeActionSpace(topology);
@@ -39,7 +54,7 @@ public class ReactiveAgent implements ReactiveBehavior {
         calculateR(distribution, agent, topology);
         calculateT(distribution, topology);
 
-        ReinforcementLearningAlgorithm rla = new ReinforcementLearningAlgorithm(
+        rla = new ReinforcementLearningAlgorithm(
                 states, actions, topology, discountFactor, epsilon, R, T);
         rla.reinforcementLearning();
     }
@@ -129,13 +144,13 @@ public class ReactiveAgent implements ReactiveBehavior {
                     if (state.getCurrentCity().hasNeighbor(nextCity)
                             //FIXME: delete this if I am not a neighbor to myself
                             && state.getCurrentCity().id != nextCity.id) {
-                        RforFixedState.put(action, -transitPrice * state.getCurrentCity().distanceTo(nextCity));
+                        RforFixedState.putIfAbsent(action, -transitPrice * state.getCurrentCity().distanceTo(nextCity));
                     } else
                         //the action in this state is impossible
-                        RforFixedState.put(action, NO_REWARD);
-                } else {
+                        RforFixedState.putIfAbsent(action, NO_REWARD);
+                } else if (state.getTaskCity() != null) {
                     // accepting a task
-                    RforFixedState.put(ACCEPT_TASK,
+                    RforFixedState.putIfAbsent(ACCEPT_TASK,
                             distribution.reward(state.getCurrentCity(), state.getTaskCity())
                                     - transitPrice * state.getCurrentCity().distanceTo(state.getTaskCity()));
                 }
@@ -162,18 +177,22 @@ public class ReactiveAgent implements ReactiveBehavior {
                 for (State nextState : states) {
                     //if the agent decides to accept the task, the destination city of the current state and
                     //the current city of the next state must be the same
-                    if (action == ACCEPT_TASK && initialState.getTaskCity() == nextState.getCurrentCity()
+                    if (action.equals(ACCEPT_TASK) && initialState.getTaskCity() == nextState.getCurrentCity()
                             // if the agent decides to refuse the packet or there are no tasks he must end up in the desired city
                             // (the destination of the desired action and the town the agent end up in must be the same)
                             // and he must move to a neighboring city
-                            || action != ACCEPT_TASK && nextState.getCurrentCity().id == action
+                            || !action.equals(ACCEPT_TASK) && nextState.getCurrentCity().id == action
                             && initialState.getCurrentCity().hasNeighbor(nextState.getCurrentCity())) {
-                        if (nextState.getTaskCity() != null)
+
+                        T.putIfAbsent(initialState, new HashMap<>());
+                        T.get(initialState).putIfAbsent(action, new HashMap<>());
+                        if (nextState.getTaskCity() != null) {
                             //there are no packets in the next state
                             T.get(initialState).get(action).put(nextState, distribution.probability(nextState.getCurrentCity(), null));
-                        else
+                        } else {
                             T.get(initialState).get(action).
                                     put(nextState, calculateProbability(distribution, nextState.getCurrentCity(), nextState.getTaskCity()));
+                        }
                     }
 
                 }
@@ -188,6 +207,26 @@ public class ReactiveAgent implements ReactiveBehavior {
 
     @Override
     public Action act(Vehicle vehicle, Task availableTask) {
-        return null;
+        System.out.println("act");
+        Action action;
+
+        City currentCity = vehicle.getCurrentCity();
+        City deliveryCity = availableTask != null ? availableTask.deliveryCity : null;
+        State currentState = new State(currentCity, deliveryCity);
+
+        Integer bestAction = rla.getBest().get(currentState);
+        if (availableTask != null && bestAction.equals(ACCEPT_TASK)) {
+            action = new Action.Pickup(availableTask);
+        } else {
+            action = new Action.Move(getCityById(bestAction, topology));
+        }
+
+        if (numActions >= 1) {
+            System.out.println("The total profit after " + numActions + " actions is " + myAgent.getTotalProfit() +
+                    " (average profit: " + (myAgent.getTotalProfit() / (double) numActions) + ")");
+        }
+        numActions++;
+
+        return action;
     }
 }

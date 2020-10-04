@@ -9,8 +9,6 @@ import java.util.Objects;
 
 public class State {
 
-    private static int ID = 0;
-    private int id;
     // current city = where am I now
     private City currentCity;
     // if not null there exists a packet for the city destinationCity
@@ -19,7 +17,6 @@ public class State {
     public State(City currentCity, City taskCity) {
         this.currentCity = currentCity;
         this.taskCity = taskCity;
-        this.id = ID++;
     }
 
     public State(City currentCity) {
@@ -52,9 +49,5 @@ public class State {
 
     public City getTaskCity() {
         return taskCity;
-    }
-
-    public int getId() {
-        return id;
     }
 }
