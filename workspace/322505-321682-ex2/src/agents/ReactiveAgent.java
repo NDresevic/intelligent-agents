@@ -156,12 +156,6 @@ public class ReactiveAgent implements ReactiveBehavior {
         //that's the product over every city j
         //of probability that in the city i there is no packet for the city j
         int numberOfCities = topology.cities().size();
-        Double[] probNoPackets = new Double[numberOfCities];
-        for (int i = 0; i < numberOfCities; i++) {
-            probNoPackets[i] = 1d;
-            for (int j = 0; j < numberOfCities; j++)
-                probNoPackets[i] *= 1 - distribution.probability(topology.cities().get(i), topology.cities().get(j));
-        }
 
         for (State initialState : states) {
             for (Integer action : actions) {
@@ -176,10 +170,10 @@ public class ReactiveAgent implements ReactiveBehavior {
                             && initialState.getCurrentCity().hasNeighbor(nextState.getCurrentCity())) {
                         if (nextState.getTaskCity() != null)
                             //there are no packets in the next state
-                            T.get(initialState).get(action).put(nextState, probNoPackets[action]);
+                            T.get(initialState).get(action).put(nextState, distribution.probability(nextState.getCurrentCity(), null));
                         else
                             T.get(initialState).get(action).
-                                    put(nextState, calculateProbability(nextState.getCurrentCity(), nextState.getTaskCity()));
+                                    put(nextState, calculateProbability(distribution, nextState.getCurrentCity(), nextState.getTaskCity()));
                     }
 
                 }
@@ -188,7 +182,7 @@ public class ReactiveAgent implements ReactiveBehavior {
     }
 
     //TODO FIXME
-    private Double calculateProbability(City currentCity, City nextCity) {
+    private Double calculateProbability(TaskDistribution distribution, City currentCity, City nextCity) {
         return 0d;
     }
 
