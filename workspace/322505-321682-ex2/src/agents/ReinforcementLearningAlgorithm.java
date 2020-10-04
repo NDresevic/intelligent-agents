@@ -3,7 +3,6 @@ package agents;
 import logist.topology.Topology;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class ReinforcementLearningAlgorithm {
 
@@ -53,7 +52,7 @@ public class ReinforcementLearningAlgorithm {
             for (State state : Q.keySet()) {
                 for (Integer action : Q.get(state).keySet()) {
                     double sum = 0.0;
-                    for (State nextState : getAllNextStatesForAction(action)) {
+                    for (State nextState: T.get(state).get(action).keySet()) {
                         sum += discountFactor * T.get(state).get(action).get(nextState) * V.get(nextState);
                     }
 
@@ -81,22 +80,6 @@ public class ReinforcementLearningAlgorithm {
                 break;
             }
         }
-        System.out.println("SSS");
-    }
-
-    private List<State> getAllNextStatesForAction(Integer action) {
-        List<State> returnStates = new ArrayList<>();
-
-        for (State state : states) {
-            if (action.equals(ReactiveAgent.ACCEPT_TASK)) {
-                if (state.getTaskCity() != null) {
-                    returnStates.addAll(states.stream().filter(s -> state.getTaskCity().equals(s.getCurrentCity())).collect(Collectors.toList()));
-                }
-            } else {
-                returnStates.addAll(states.stream().filter(s -> state.getCurrentCity().neighbors().contains(s.getCurrentCity())).collect(Collectors.toList()));
-            }
-        }
-        return returnStates;
     }
 
     public Map<State, Integer> getBest() {

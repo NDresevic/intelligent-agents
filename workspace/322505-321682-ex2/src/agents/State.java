@@ -41,4 +41,12 @@ public class State {
     public City getTaskCity() {
         return taskCity;
     }
+
+    @Override
+    public String toString() {
+        return "State{" +
+                "currentCity=" + currentCity +
+                ", taskCity=" + taskCity +
+                '}';
+    }
 }
