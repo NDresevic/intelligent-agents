@@ -9,10 +9,7 @@ import logist.task.TaskDistribution;
 import logist.topology.Topology;
 import logist.topology.Topology.City;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class ReactiveAgent implements ReactiveBehavior {
@@ -25,8 +22,8 @@ public class ReactiveAgent implements ReactiveBehavior {
     private double discountFactor;
     private double epsilon;
 
-    private List<State> states;
-    private List<Integer> actions;
+    private Set<State> states;
+    private Set<Integer> actions;
 
     private Map<State, Map<Integer, Double>> R;
     private Map<State, Map<Integer, Map<State, Double>>> T;
@@ -42,8 +39,8 @@ public class ReactiveAgent implements ReactiveBehavior {
         this.numActions = 0;
         this.myAgent = agent;
 
-        this.states = new ArrayList<>();
-        this.actions = new ArrayList<>();
+        this.states = new HashSet<>();
+        this.actions = new HashSet<>();
         this.R = new HashMap<>();
         this.T = new HashMap<>();
 

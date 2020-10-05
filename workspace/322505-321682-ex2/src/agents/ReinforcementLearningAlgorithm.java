@@ -6,8 +6,8 @@ import java.util.*;
 
 public class ReinforcementLearningAlgorithm {
 
-    private List<State> states;
-    private List<Integer> actions;
+    private Set<State> states;
+    private Set<Integer> actions;
     private double discountFactor;
     private double epsilon;
 
@@ -20,7 +20,7 @@ public class ReinforcementLearningAlgorithm {
     private Map<State, Double> V;
     private Map<State, Map<Integer, Double>> Q;
 
-    public ReinforcementLearningAlgorithm(List<State> states, List<Integer> actions, Topology topology,
+    public ReinforcementLearningAlgorithm(Set<State> states, Set<Integer> actions, Topology topology,
                                           double discountFactor, double epsilon, Map<State, Map<Integer, Double>> R,
                                           Map<State, Map<Integer, Map<State, Double>>> T) {
         this.states = states;
