@@ -188,33 +188,60 @@ public class ReactiveAgent implements ReactiveBehavior {
     }
 
     /**
-     * Calculate the probability that the agent in the city currentCity sees a packet for delivery to city nextCity.
-     *
+     * In the logist documentation regarding tasks xml it is said that the distribution tag represents relative
+     * probability of a task. However, the meaning of relative is not defined and, additionally, there is
+     * a paragraph that says that if multiple tasks are available in the city, the logist platform chooses
+     * one randomly to show it to the agent. At first, we thought that this probability distribution is
+     * independent for each pair (city1, city2), e.g. if distribution="uniform" all p(i,j) are drawn from
+     * the same uniform distribution independently. Following method calculates the probability that in THAT
+     * case the agent in city1 SEES for the delivery the packet for city2.
+     * Summing up the distribution.probability(x,y) for fixed x and all possible y (including null) we got
+     * the result 1 for all x. There we understood the meaning of "relative", but we are still confused
+     * because of the paragraph about multiple tasks. We believe that this is just given as an explanation
+     * that everything behind the scenes in the logist part is already calculated in proper manner
      * @param distribution
      * @param currentCity
      * @param nextCity
      * @return
      */
     private Double calculateProbability(TaskDistribution distribution, City currentCity, City nextCity, Topology topology) {
+        //calculate the probability that over all possible choices of shown packets the packet from currentCity
+        //  to nextCity is chosen
+        //iterate over all subsets of cities that contain the city currentCity
+        //if city x is presented in the subset that means that the task for city x is shown to the logist
         double probability = 0d;
         List<City> filteredCities = topology.cities().stream().filter(
                 city -> !city.equals(currentCity) && !city.equals(nextCity)).collect(Collectors.toList());
+        //current contains of 0s and 1s, if the i-th bit is 1, it means that i-th city in the filtered list
+        //is in the subset
         String current = "0".repeat(filteredCities.size());
         String finished = "1".repeat(filteredCities.size());
+        //number of packages shown to the logist
         long numberOfCitiesInSubset;
 
         while (!current.equals(finished)) {
+            //currentProbability accumulates the probability of having particular subset of packets
             double currentProbability = 1d;
             for (int i = 0; i < current.length(); i++) {
                 if (current.charAt(i) == '1') {
+                    //multiplying with probability that the packet for i-th city is shown
                     currentProbability *= distribution.probability(currentCity, filteredCities.get(i));
                 } else {
+                    //multiplying with probability that the packet for i-th city is not shown
                     currentProbability *= 1 - distribution.probability(currentCity, filteredCities.get(i));
                 }
             }
 
+            // add 1 because the packet for nextCity is definitely in the subset
             numberOfCitiesInSubset = current.chars().filter(bit -> bit == '1').count() + 1;
+
+            //add probability for this particular subset
+            // divide by numberOfCitiesInSubset because logist chooses one packet from the subset randomly
+            // multiplied by probability(currentCity, nextCity) because the packet for nextCity is definitely in the subset
+            // multiplied by current probability to have chosen subset
             probability += 1.0 / (numberOfCitiesInSubset) * distribution.probability(currentCity, nextCity) * currentProbability;
+
+            //prepare bits for next iteration
             String temp = Integer.toBinaryString(Integer.valueOf(current, 2) + 1);
             current = "0".repeat(filteredCities.size() - temp.length()) + temp;
         }
