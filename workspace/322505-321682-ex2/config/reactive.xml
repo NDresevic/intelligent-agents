@@ -19,6 +19,7 @@
 		-->
 		<probability distribution="uniform" min="0.0" max="1.0" />
 		<reward distribution="constant" policy="short-distances" min="1000" max="99999" />
+<!--		<reward distribution="uniform" min="1000" max="99999" />-->
 		<weight distribution="constant" value="3" />
 		
 		<!--
@@ -72,7 +73,7 @@
 				<set cost-per-km="5" />
 			</vehicle>
 		</company>
-		
+
 		<company name="Company E">
 			<!-- the fifth vehicle (magenta) -->
 			<vehicle name="Vehicle 5">
@@ -83,7 +84,7 @@
 				<set cost-per-km="5" />
 			</vehicle>
 		</company>
-		
+
 		<company name="Company F">
 			<!-- the sixth vehicle (cyan) -->
 			<vehicle name="Vehicle 6">
