@@ -46,9 +46,11 @@ public class ReinforcementLearningAlgorithm {
     }
 
     public void reinforcementLearning() {
-        double maxDifference = 0.0;
+        int steps = 0;
 
         while (true) {
+            double maxDifference = 0.0;
+
             for (State state : Q.keySet()) {
                 for (Integer action : Q.get(state).keySet()) {
                     double value = R.get(state).get(action);
@@ -69,16 +71,24 @@ public class ReinforcementLearningAlgorithm {
                     }
                 }
 
+//                System.out.println(V.get(state) - bestValue);
+                maxDifference = Math.max(Math.abs(V.get(state) - bestValue), maxDifference);
                 best.put(state, bestAction);
                 V.put(state, bestValue);
-                maxDifference = Math.max(Math.abs(V.get(state) - bestValue), maxDifference);
             }
 
             //  algorithm stops whenever there is no more a change in V
             if (maxDifference < epsilon) {
+                System.out.println("maxDifference = " + maxDifference);
                 break;
             }
+            steps++;
         }
+
+        System.out.println("Number of steps: " + steps);
+        System.out.println("Best(S): " + best);
+        System.out.println("V(S): " + V);
+        System.out.println("2 * epsilon * y / (1 - y) = " + 2*epsilon*discountFactor/(1-discountFactor));
     }
 
     public Map<State, Integer> getBest() {
