@@ -19,7 +19,6 @@
 		-->
 		<probability distribution="uniform" min="0.0" max="1.0" />
 		<reward distribution="constant" policy="short-distances" min="1000" max="99999" />
-<!--		<reward distribution="uniform" min="1000" max="99999" />-->
 		<weight distribution="constant" value="3" />
 		
 		<!--
