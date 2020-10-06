@@ -10,6 +10,10 @@ import logist.topology.Topology;
 
 import java.util.Random;
 
+/**
+ * Greedy agent takes a packet if the reward for delivery is
+ * above given rewardThreshold
+ */
 public class GreedyAgent implements ReactiveBehavior {
 
     private int rewardThreshold;
@@ -19,8 +23,7 @@ public class GreedyAgent implements ReactiveBehavior {
     @Override
     public void setup(Topology topology, TaskDistribution distribution, Agent agent) {
         // Reads the discount factor from the agents.xml file.
-        // If the property is not present it defaults to 0.95
-
+        // If the property is not present it defaults to 5000
         this.rewardThreshold = agent.readProperty("reward-threshold", Integer.class,
                 5000);
         this.numActions = 0;

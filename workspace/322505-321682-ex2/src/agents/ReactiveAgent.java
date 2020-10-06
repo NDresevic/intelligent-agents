@@ -100,12 +100,7 @@ public class ReactiveAgent implements ReactiveBehavior {
         return null;
     }
 
-    /**
-     * @param state
-     * @param action
-     * @param topology
-     * @return
-     */
+
     public static boolean isActionPossible(State state, Integer action, Topology topology) {
         if (action.equals(ACCEPT_TASK)) { // accept the task and the destination city exists
             return state.getTaskCity() != null;
@@ -166,9 +161,11 @@ public class ReactiveAgent implements ReactiveBehavior {
 
                         T.putIfAbsent(initialState, new HashMap<>());
                         T.get(initialState).putIfAbsent(action, new HashMap<>());
-                        // !!!
+
+                        //distribution.probability(city, null) gives the probability that there are no task in city
                         T.get(initialState).get(action).put(nextState,
                                 distribution.probability(nextState.getCurrentCity(), nextState.getTaskCity()));
+
                         // in the case we actually need what is written in the documentation
 //                        if (nextState.getTaskCity() != null) { // there are no packets in the next state
 //                            T.get(initialState).get(action).put(nextState,

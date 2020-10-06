@@ -71,13 +71,12 @@ public class ReinforcementLearningAlgorithm {
                     }
                 }
 
-//                System.out.println(V.get(state) - bestValue);
                 maxDifference = Math.max(Math.abs(V.get(state) - bestValue), maxDifference);
                 best.put(state, bestAction);
                 V.put(state, bestValue);
             }
 
-            //  algorithm stops whenever there is no more a change in V
+            //  algorithm stops whenever there is no significant change in V
             if (maxDifference < epsilon) {
                 System.out.println("maxDifference = " + maxDifference);
                 break;

@@ -13,6 +13,10 @@ import logist.task.TaskDistribution;
 import logist.topology.Topology;
 import logist.topology.Topology.City;
 
+/**
+ * Random agent takes a task if the random value is
+ * greater than given pPickup
+ */
 public class RandomAgent implements ReactiveBehavior {
 
 	private Random random;
