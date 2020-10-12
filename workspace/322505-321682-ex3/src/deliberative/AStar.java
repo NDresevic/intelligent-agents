@@ -7,14 +7,12 @@ import logist.topology.Topology;
 
 public class AStar extends SearchAlgorithm {
 
-    private State rootState;
     private String heuristicName;
 
     public AStar(TaskSet availableTaskSet, TaskSet carriedTaskSet, Topology topology, Vehicle vehicle,
                  String heuristicName) {
         super(availableTaskSet, carriedTaskSet, topology, vehicle);
         this.heuristicName = heuristicName;
-        this.rootState = super.getGraphRoot();
     }
 
     @Override

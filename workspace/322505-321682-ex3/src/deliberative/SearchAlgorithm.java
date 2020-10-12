@@ -12,14 +12,18 @@ public abstract class SearchAlgorithm {
     private Topology topology;
     private Vehicle vehicle;
 
+    private State rootState;
+
     public SearchAlgorithm(TaskSet availableTaskSet, TaskSet carriedTaskSet, Topology topology, Vehicle vehicle) {
         this.availableTaskSet = availableTaskSet;
         this.carriedTaskSet = carriedTaskSet;
         this.topology = topology;
         this.vehicle = vehicle;
+
+        this.rootState = getGraphRoot();
     }
 
-    public State getGraphRoot() {
+    private State getGraphRoot() {
         State rootState = new State(carriedTaskSet, availableTaskSet, vehicle, null);
 
 
