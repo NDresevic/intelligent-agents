@@ -1,4 +1,4 @@
-package template;
+package deliberative;
 
 import logist.agent.Agent;
 import logist.behavior.DeliberativeBehavior;

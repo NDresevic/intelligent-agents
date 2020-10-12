@@ -1,4 +1,4 @@
-package template;
+package deliberative;
 
 import logist.plan.Plan;
 import logist.task.TaskSet;
