@@ -32,6 +32,7 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 	
 	@Override
 	public void setup(Topology topology, TaskDistribution td, Agent agent) {
+
 		this.topology = topology;
 		this.td = td;
 		this.agent = agent;

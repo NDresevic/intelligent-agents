@@ -1,9 +1,6 @@
-package template;
-import logist.simulation.Vehicle;
+package deliberative;
 import logist.task.Task;
 import logist.topology.Topology.City;
-
-import logist.topology.Topology;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,19 +8,21 @@ import java.util.List;
 public class State {
 
     private City currentCity;
-    private List<Task> myTasks;
+    private List<Task> carriedTasks;
     private List<Task> otherTasks;
     private int myTasksWeights;
+    private int costFromTheRoot;
 
     public State(City currentCity, List<Task> otherTasks) {
         this.currentCity = currentCity;
-        this.myTasks = new ArrayList<>();
+        this.carriedTasks = new ArrayList<>();
         this.otherTasks = otherTasks;
         this.myTasksWeights = 0;
+        this.costFromTheRoot = 0;
     }
 
     public boolean isGoalState(){
-        return !otherTasks.isEmpty();
+        return !carriedTasks.isEmpty() && !otherTasks.isEmpty();
     }
 
     private void updateMyTasksWeights(Task task){
