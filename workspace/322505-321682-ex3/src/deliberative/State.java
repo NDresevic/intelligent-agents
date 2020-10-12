@@ -13,22 +13,30 @@ public class State {
     private City currentCity;
     private TaskSet carriedTasks;
     private TaskSet availableTasks;
-    private int carriedTasksWeights;
-    private double costFromRoot;
+    private int carriedTasksWeights = 0;
+    private double costFromRoot;    // g(n)
 
     private Vehicle vehicle;
     private State parent;
     private Set<State> children;
 
-    public State(TaskSet carriedTasks, TaskSet availableTasks, Vehicle vehicle, State parent) {
-        this.currentCity = vehicle.getCurrentCity();
+    public State(City currentCity, TaskSet carriedTasks, TaskSet availableTasks, Vehicle vehicle) {
+        this.currentCity = currentCity;
         this.carriedTasks = carriedTasks;
         this.availableTasks = availableTasks;
-        this.carriedTasksWeights = carriedTasks.weightSum();
+        if (carriedTasks != null) {
+            this.carriedTasksWeights = carriedTasks.weightSum();
+        }
         this.vehicle = vehicle;
+        this.costFromRoot = 0;
+        this.parent = null;
+        this.children = new HashSet<>();
+    }
+
+    public State(City currentCity, TaskSet carriedTasks, TaskSet availableTasks, Vehicle vehicle, State parent) {
+        this(currentCity, carriedTasks, availableTasks, vehicle);
         this.costFromRoot = parent.costFromRoot + currentCity.distanceTo(parent.currentCity) * vehicle.costPerKm();
         this.parent = parent;
-        this.children = new HashSet<>();
     }
 
     public boolean isGoalState() {
@@ -51,18 +59,53 @@ public class State {
         return parent;
     }
 
+    public int getCarriedTasksWeights() {
+        return carriedTasksWeights;
+    }
+
+    public City getCurrentCity() {
+        return currentCity;
+    }
+
+    public TaskSet getCarriedTasks() {
+        return carriedTasks;
+    }
+
+    public TaskSet getAvailableTasks() {
+        return availableTasks;
+    }
+
+    public Vehicle getVehicle() {
+        return vehicle;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         State state = (State) o;
-        return currentCity.equals(state.currentCity) &&
-                carriedTasks.equals(state.carriedTasks) &&
-                availableTasks.equals(state.availableTasks);
+        return Objects.equals(currentCity, state.currentCity) &&
+                Objects.equals(carriedTasks, state.carriedTasks) &&
+                Objects.equals(availableTasks, state.availableTasks) &&
+                Objects.equals(parent, state.parent);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(currentCity, carriedTasks, availableTasks);
+        return Objects.hash(currentCity, carriedTasks, availableTasks, parent);
+    }
+
+    @Override
+    public String toString() {
+        return "State{" +
+                "currentCity=" + currentCity +
+                ", carriedTasks=" + carriedTasks +
+                ", availableTasks=" + availableTasks +
+                ", carriedTasksWeights=" + carriedTasksWeights +
+                ", costFromRoot=" + costFromRoot +
+                ", vehicle=" + vehicle +
+                ", parent=" + parent +
+                ", children=" + children +
+                '}';
     }
 }

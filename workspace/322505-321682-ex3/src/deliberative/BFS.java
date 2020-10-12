@@ -12,6 +12,8 @@ public class BFS extends SearchAlgorithm {
     }
 
     public Plan getPlan() {
+        System.out.println("ovde");
+        System.out.println(super.getRootState());
         return null;
     }
 }

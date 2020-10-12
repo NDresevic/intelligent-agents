@@ -16,9 +16,11 @@ public class DeliberativeMain implements DeliberativeBehavior {
     private String algorithmName;
     private String heuristicName;
 
+    private SearchAlgorithm searchAlgorithm;
+
     @Override
     public void setup(Topology topology, TaskDistribution taskDistribution, Agent agent) {
-        carriedTasks = null;
+        this.carriedTasks = null;
         this.topology = topology;
         this.capacity = agent.vehicles().get(0).capacity();
 
