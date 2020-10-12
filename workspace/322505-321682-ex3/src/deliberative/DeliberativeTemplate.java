@@ -1,4 +1,4 @@
-package template;
+package deliberative;
 
 /* import table */
 import logist.simulation.Vehicle;

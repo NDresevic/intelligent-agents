@@ -9,8 +9,7 @@ public class BFS extends SearchAlgorithm {
 
     private State rootState;
 
-    public BFS(TaskSet availableTaskSet, TaskSet carriedTaskSet, Topology topology, Vehicle vehicle,
-               String heuristicName) {
+    public BFS(TaskSet availableTaskSet, TaskSet carriedTaskSet, Topology topology, Vehicle vehicle) {
         super(availableTaskSet, carriedTaskSet, topology, vehicle);
         this.rootState = super.getGraphRoot();
     }

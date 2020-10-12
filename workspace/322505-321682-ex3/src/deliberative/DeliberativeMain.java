@@ -34,9 +34,9 @@ public class DeliberativeMain implements DeliberativeBehavior {
     @Override
     public Plan plan(Vehicle vehicle, TaskSet taskSet) {
         if (algorithmName.equalsIgnoreCase("BFS"))
-            return new BFS(taskSet, carriedTasks, topology, capacity).getPlan();
+            return new BFS(taskSet, carriedTasks, topology, vehicle).getPlan();
         else
-            return new AStar(taskSet, carriedTasks, topology, capacity, heuristicName).getPlan();
+            return new AStar(taskSet, carriedTasks, topology, vehicle, heuristicName).getPlan();
     }
 
     @Override
