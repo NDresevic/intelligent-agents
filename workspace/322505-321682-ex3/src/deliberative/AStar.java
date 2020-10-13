@@ -1,9 +1,7 @@
 package deliberative;
 
-import logist.plan.Plan;
 import logist.simulation.Vehicle;
 import logist.task.Task;
-import logist.task.TaskSet;
 import logist.topology.Topology;
 
 import java.lang.reflect.InvocationTargetException;
@@ -17,9 +15,10 @@ public class AStar extends SearchAlgorithm {
 
     private final String heuristicName;
     private final PriorityQueue<State> Q;
+    //TODO this should be deleted if our graph is tree
     private final Set<State> C;
+    //TODO this should be deleted if our graph is tree
     private final Map<State, State> parentOptimal;
-    private final Map<State, Double> G;
     private final Map<State, Double> H;
 
     public AStar(Set<Task> availableTaskSet, Set<Task> carriedTaskSet, Topology topology, Vehicle vehicle,
@@ -29,28 +28,24 @@ public class AStar extends SearchAlgorithm {
         this.Q = new PriorityQueue<>(1, (state1, state2)
                 -> Double.valueOf(calculateF(state1)).compareTo(Double.valueOf(calculateF(state2))));
         this.C = new HashSet<>();
-        this.G = new HashMap<>();
         this.H = new HashMap<>();
         this.parentOptimal = new HashMap<>();
         this.heuristicName = heuristicName;
     }
 
     private double calculateF(State state) {
-        return G.get(state) + H.get(state);
+        return state.getCostFromRoot() + H.get(state);
     }
 
     @Override
     public State getGoalState() {
         calculateHeuristic();
-//        for(Double hVrednost : H.values()){
-//            System.out.println(hVrednost);
-//        }
-        G.put(rootState, 0d);
         Q.add(rootState);
 
         State currentState;
         State goalState = null;
 
+        //while there are unprocessed states
         while (!Q.isEmpty()) {
             currentState = Q.remove();
             if (currentState.isGoalState()) {
@@ -59,17 +54,19 @@ public class AStar extends SearchAlgorithm {
             }
             Set<State> children = currentState.getChildren();
             for (State child : children) {
-                double costToChild = currentState.getCurrentCity().distanceTo(child.getCurrentCity());
+                //TODO Q can not have child if we have a tree
+                if(Q.contains(child))
+                    System.err.println("Q: THIS SHOULD BE IMPOSSIBLE IN OUR STATE REPRESENTATION");
                 if (!Q.contains(child) && !C.contains(child)) {
-                    G.put(child, G.get(currentState) + costToChild);
                     Q.add(child);
                     parentOptimal.put(child, currentState);
                 } else {
-                    double possibleBetterPath = G.get(currentState) +
+                    double possibleBetterPath = currentState.getCostFromRoot() +
                             currentState.getCurrentCity().distanceTo(child.getCurrentCity());
-                    if (possibleBetterPath < G.get(child)) {
+                    //TODO this is impossible since we have a tree and not a graph
+                    System.err.println("multiple paths: THIS SHOULD BE IMPOSSIBLE IN OUR STATE REPRESENTATION");
+                    if (possibleBetterPath < child.getCostFromRoot()) {
                         parentOptimal.put(child, currentState);
-                        G.put(child, possibleBetterPath);
                         if (C.contains(child)) {
                             C.remove(child);
                             Q.add(child);
@@ -80,18 +77,6 @@ public class AStar extends SearchAlgorithm {
             C.add(currentState);
         }
 
-        if (goalState != null) {
-            currentState = goalState;
-            List<State> optimalPath = new ArrayList<>();
-            while (!currentState.equals(rootState)) {
-                optimalPath.add(currentState);
-                currentState = parentOptimal.get(currentState);
-            }
-            optimalPath.add(rootState);
-            Collections.reverse(optimalPath);
-        }
-
-        //FIXME optimal path contains list of states that are optimal path (from root to goal)
         return goalState;
     }
 
