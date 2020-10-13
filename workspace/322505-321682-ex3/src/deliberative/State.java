@@ -1,7 +1,7 @@
 package deliberative;
 
 import logist.simulation.Vehicle;
-import logist.task.TaskSet;
+import logist.task.Task;
 import logist.topology.Topology.City;
 
 import java.util.HashSet;
@@ -11,8 +11,8 @@ import java.util.Set;
 public class State {
 
     private City currentCity;
-    private TaskSet carriedTasks;
-    private TaskSet availableTasks;
+    private Set<Task> carriedTasks;
+    private Set<Task> availableTasks;
     private int carriedTasksWeights = 0;
     private double costFromRoot;    // g(n)
 
@@ -20,12 +20,12 @@ public class State {
     private State parent;
     private Set<State> children;
 
-    public State(City currentCity, TaskSet carriedTasks, TaskSet availableTasks, Vehicle vehicle) {
+    public State(City currentCity, Set<Task> carriedTasks, Set<Task> availableTasks, Vehicle vehicle) {
         this.currentCity = currentCity;
         this.carriedTasks = carriedTasks;
         this.availableTasks = availableTasks;
-        if (carriedTasks != null) {
-            this.carriedTasksWeights = carriedTasks.weightSum();
+        for (Task task: carriedTasks) {
+            this.carriedTasksWeights += task.weight;
         }
         this.vehicle = vehicle;
         this.costFromRoot = 0;
@@ -33,7 +33,7 @@ public class State {
         this.children = new HashSet<>();
     }
 
-    public State(City currentCity, TaskSet carriedTasks, TaskSet availableTasks, Vehicle vehicle, State parent) {
+    public State(City currentCity, Set<Task> carriedTasks, Set<Task> availableTasks, Vehicle vehicle, State parent) {
         this(currentCity, carriedTasks, availableTasks, vehicle);
         this.costFromRoot = parent.costFromRoot + currentCity.distanceTo(parent.currentCity) * vehicle.costPerKm();
         this.parent = parent;
@@ -67,12 +67,12 @@ public class State {
         return currentCity;
     }
 
-    public TaskSet getCarriedTasks() {
-        return carriedTasks;
+    public Set<Task> getAvailableTasks() {
+        return availableTasks;
     }
 
-    public TaskSet getAvailableTasks() {
-        return availableTasks;
+    public Set<Task> getCarriedTasks() {
+        return carriedTasks;
     }
 
     public Vehicle getVehicle() {
@@ -105,7 +105,6 @@ public class State {
                 ", costFromRoot=" + costFromRoot +
                 ", vehicle=" + vehicle +
                 ", parent=" + parent +
-                ", children=" + children +
                 '}';
     }
 }
