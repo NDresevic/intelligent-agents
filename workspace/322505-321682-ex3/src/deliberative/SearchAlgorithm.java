@@ -7,6 +7,7 @@ import logist.topology.Topology;
 import logist.topology.Topology.City;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public abstract class SearchAlgorithm {
 
@@ -92,10 +93,40 @@ public abstract class SearchAlgorithm {
         return rootState;
     }
 
-    abstract List<State> getOptimalPath();
+    abstract State getGoalState();
 
-    public Plan getPlan(){
-        List<State> states = this.getOptimalPath();
-        return null;
+    public Plan getPlan() {
+        City current = vehicle.getCurrentCity();
+        Plan plan = new Plan(current);
+
+        State currentState = this.getGoalState();
+        while (currentState.getParent().getParent() != null) {
+            State parent = currentState.getParent();
+
+            // get which tasks are delivered
+            Set<Task> parentCarriedTasks = parent.getCarriedTasks();
+            Set<Task> currentCarriedTasks = currentState.getCarriedTasks();
+            List<Task> deliveredTasks = parentCarriedTasks.stream()
+                    .filter(element -> !currentCarriedTasks.contains(element))
+                    .collect(Collectors.toList());
+            for (Task deliveredTask: deliveredTasks) {
+                plan.appendDelivery(deliveredTask);
+            }
+
+            // get which tasks are picked up
+            Set<Task> parentAvailableTasks = parent.getAvailableTasks();
+            Set<Task> currentAvailableTasks = currentState.getAvailableTasks();
+            List<Task> pickedTasks = parentAvailableTasks.stream()
+                    .filter(element -> !currentAvailableTasks.contains(element))
+                    .collect(Collectors.toList());
+            for (Task pickedTask: pickedTasks) { // TODO: videti da li uzimamo jedan ili vise
+                plan.appendPickup(pickedTask);
+            }
+
+            plan.appendMove(parent.getCurrentCity());
+            currentState = parent;
+        }
+
+        return plan;
     }
 }

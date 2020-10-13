@@ -1,6 +1,5 @@
 package deliberative;
 
-import logist.plan.Plan;
 import logist.simulation.Vehicle;
 import logist.task.Task;
 import logist.topology.Topology;
@@ -13,7 +12,8 @@ public class BFS extends SearchAlgorithm {
         super(availableTaskSet, carriedTaskSet, topology, vehicle);
     }
 
-    public List<State> getOptimalPath() {
+    @Override
+    public State getGoalState() {
         System.out.println("root: " + rootState);
 
         System.out.println("graph: " + breadthFirstTraversal(rootState));

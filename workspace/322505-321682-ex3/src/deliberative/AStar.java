@@ -40,7 +40,7 @@ public class AStar extends SearchAlgorithm {
     }
 
     @Override
-    public List<State> getOptimalPath() {
+    public State getGoalState() {
         calculateHeuristic();
         Q.add(rootState);
         G.put(rootState, 0d);
@@ -89,7 +89,7 @@ public class AStar extends SearchAlgorithm {
         }
 
         //FIXME optimal path contains list of states that are optimal path (from root to goal)
-        return null;
+        return goalState;
     }
 
     private void calculateHeuristic() {
