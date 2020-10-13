@@ -79,6 +79,10 @@ public class State {
         return vehicle;
     }
 
+    public double getCostFromRoot() {
+        return costFromRoot;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

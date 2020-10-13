@@ -1,5 +1,6 @@
 package deliberative;
 
+import logist.plan.Action;
 import logist.plan.Plan;
 import logist.simulation.Vehicle;
 import logist.task.Task;
@@ -98,6 +99,7 @@ public abstract class SearchAlgorithm {
     public Plan getPlan() {
         City current = vehicle.getCurrentCity();
         Plan plan = new Plan(current);
+        List<Action> actions = new ArrayList<>();
 
         State currentState = this.getGoalState();
         while (currentState.getParent().getParent() != null) {
@@ -110,7 +112,7 @@ public abstract class SearchAlgorithm {
                     .filter(element -> !currentCarriedTasks.contains(element))
                     .collect(Collectors.toList());
             for (Task deliveredTask: deliveredTasks) {
-                plan.appendDelivery(deliveredTask);
+                actions.add(new Action.Delivery(deliveredTask));
             }
 
             // get which tasks are picked up
@@ -120,13 +122,18 @@ public abstract class SearchAlgorithm {
                     .filter(element -> !currentAvailableTasks.contains(element))
                     .collect(Collectors.toList());
             for (Task pickedTask: pickedTasks) { // TODO: videti da li uzimamo jedan ili vise
-                plan.appendPickup(pickedTask);
+                actions.add(new Action.Pickup(pickedTask));
             }
 
-            plan.appendMove(parent.getCurrentCity());
+            actions.add(new Action.Move(parent.getCurrentCity()));
             currentState = parent;
         }
 
+        Collections.reverse(actions);
+        System.out.println(actions);
+        for (Action action: actions) {
+            plan.append(action);
+        }
         return plan;
     }
 }

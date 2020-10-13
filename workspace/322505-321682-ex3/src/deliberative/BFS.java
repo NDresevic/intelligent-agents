@@ -16,19 +16,29 @@ public class BFS extends SearchAlgorithm {
     public State getGoalState() {
         System.out.println("root: " + rootState);
 
-        System.out.println("graph: " + breadthFirstTraversal(rootState));
+//        System.out.println("graph: " + breadthFirstTraversal(rootState));
+        State goalState = breadthFirstTraversal(rootState);
+        System.out.println(goalState);
 
-        return null;
+        return goalState;
     }
 
-    private Set<State> breadthFirstTraversal(State rootState) {
+    private State breadthFirstTraversal(State rootState) {
         Set<State> visited = new LinkedHashSet<>();
         Queue<State> queue = new LinkedList<>();
+        double minCostFromRoot = Double.MAX_VALUE;
+        State optimalGoalState = null;
 
         queue.add(rootState);
         visited.add(rootState);
         while (!queue.isEmpty()) {
             State currentState = queue.poll();
+
+            if (currentState.isGoalState() && currentState.getCostFromRoot() < minCostFromRoot) {
+                minCostFromRoot = currentState.getCostFromRoot();
+                optimalGoalState = currentState;
+            }
+
             for (State child : currentState.getChildren()) {
                 if (!visited.contains(child)) {
                     visited.add(child);
@@ -36,6 +46,8 @@ public class BFS extends SearchAlgorithm {
                 }
             }
         }
-        return visited;
+
+        //return visited;
+        return optimalGoalState;
     }
 }
