@@ -42,8 +42,11 @@ public class AStar extends SearchAlgorithm {
     @Override
     public State getGoalState() {
         calculateHeuristic();
-        Q.add(rootState);
+//        for(Double hVrednost : H.values()){
+//            System.out.println(hVrednost);
+//        }
         G.put(rootState, 0d);
+        Q.add(rootState);
 
         State currentState;
         State goalState = null;
@@ -58,9 +61,9 @@ public class AStar extends SearchAlgorithm {
             for (State child : children) {
                 double costToChild = currentState.getCurrentCity().distanceTo(child.getCurrentCity());
                 if (!Q.contains(child) && !C.contains(child)) {
+                    G.put(child, G.get(currentState) + costToChild);
                     Q.add(child);
                     parentOptimal.put(child, currentState);
-                    G.put(child, G.get(currentState) + costToChild);
                 } else {
                     double possibleBetterPath = G.get(currentState) +
                             currentState.getCurrentCity().distanceTo(child.getCurrentCity());
@@ -94,6 +97,7 @@ public class AStar extends SearchAlgorithm {
 
     private void calculateHeuristic() {
         try {
+            System.out.println(heuristicName);
             Method method = this.getClass().getDeclaredMethod(heuristicName, rootState.getClass());
             method.invoke(this, rootState);
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
@@ -103,13 +107,13 @@ public class AStar extends SearchAlgorithm {
 
     private void minCarriedPlusMinAvailable(State currentState) {
         double h = 0d;
-        double curr = Double.MAX_VALUE;
+        double curr = currentState.getCarriedTasks().isEmpty() ? 0d : Double.MAX_VALUE;
         for (Task task : currentState.getCarriedTasks()) {
             if (currentState.getCurrentCity().distanceTo(task.deliveryCity) < curr)
                 curr = currentState.getCurrentCity().distanceTo(task.deliveryCity);
         }
         h += curr;
-        curr = Double.MAX_VALUE;
+        curr = currentState.getAvailableTasks().isEmpty() ? 0d : Double.MAX_VALUE;
         for (Task task : currentState.getAvailableTasks()) {
             double possibleShorterPath = currentState.getCurrentCity().distanceTo(task.pickupCity) +
                     task.pickupCity.distanceTo(task.deliveryCity);
