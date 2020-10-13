@@ -92,5 +92,10 @@ public abstract class SearchAlgorithm {
         return rootState;
     }
 
-    abstract Plan getPlan();
+    abstract List<State> getOptimalPath();
+
+    public Plan getPlan(){
+        List<State> states = this.getOptimalPath();
+        return null;
+    }
 }

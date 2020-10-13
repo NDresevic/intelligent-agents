@@ -5,10 +5,7 @@ import logist.simulation.Vehicle;
 import logist.task.Task;
 import logist.topology.Topology;
 
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.Queue;
-import java.util.Set;
+import java.util.*;
 
 public class BFS extends SearchAlgorithm {
 
@@ -16,7 +13,7 @@ public class BFS extends SearchAlgorithm {
         super(availableTaskSet, carriedTaskSet, topology, vehicle);
     }
 
-    public Plan getPlan() {
+    public List<State> getOptimalPath() {
         System.out.println("root: " + rootState);
 
         System.out.println("graph: " + breadthFirstTraversal(rootState));

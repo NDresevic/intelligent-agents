@@ -35,12 +35,12 @@ public class AStar extends SearchAlgorithm {
         this.heuristicName = heuristicName;
     }
 
-    private double calculateF(State state){
+    private double calculateF(State state) {
         return G.get(state) + H.get(state);
     }
 
     @Override
-    Plan getPlan() {
+    public List<State> getOptimalPath() {
         calculateHeuristic();
         Q.add(rootState);
         G.put(rootState, 0d);
@@ -55,20 +55,19 @@ public class AStar extends SearchAlgorithm {
                 break;
             }
             Set<State> children = currentState.getChildren();
-            for(State child : children){
+            for (State child : children) {
                 double costToChild = currentState.getCurrentCity().distanceTo(child.getCurrentCity());
-                if(!Q.contains(child) && !C.contains(child)){
+                if (!Q.contains(child) && !C.contains(child)) {
                     Q.add(child);
                     parentOptimal.put(child, currentState);
                     G.put(child, G.get(currentState) + costToChild);
-                }
-                else{
+                } else {
                     double possibleBetterPath = G.get(currentState) +
                             currentState.getCurrentCity().distanceTo(child.getCurrentCity());
-                    if(possibleBetterPath < G.get(child)){
+                    if (possibleBetterPath < G.get(child)) {
                         parentOptimal.put(child, currentState);
                         G.put(child, possibleBetterPath);
-                        if(C.contains(child)) {
+                        if (C.contains(child)) {
                             C.remove(child);
                             Q.add(child);
                         }
@@ -78,10 +77,10 @@ public class AStar extends SearchAlgorithm {
             C.add(currentState);
         }
 
-        if(goalState != null) {
+        if (goalState != null) {
             currentState = goalState;
             List<State> optimalPath = new ArrayList<>();
-            while (!currentState.equals(rootState)){
+            while (!currentState.equals(rootState)) {
                 optimalPath.add(currentState);
                 currentState = parentOptimal.get(currentState);
             }
@@ -102,26 +101,26 @@ public class AStar extends SearchAlgorithm {
         }
     }
 
-    private void minCarriedPlusMinAvailable(State currentState){
+    private void minCarriedPlusMinAvailable(State currentState) {
         double h = 0d;
         double curr = Double.MAX_VALUE;
-        for(Task task : currentState.getCarriedTasks()){
-            if(currentState.getCurrentCity().distanceTo(task.deliveryCity) < curr)
+        for (Task task : currentState.getCarriedTasks()) {
+            if (currentState.getCurrentCity().distanceTo(task.deliveryCity) < curr)
                 curr = currentState.getCurrentCity().distanceTo(task.deliveryCity);
         }
         h += curr;
         curr = Double.MAX_VALUE;
-        for(Task task : currentState.getAvailableTasks()){
+        for (Task task : currentState.getAvailableTasks()) {
             double possibleShorterPath = currentState.getCurrentCity().distanceTo(task.pickupCity) +
                     task.pickupCity.distanceTo(task.deliveryCity);
-            if(possibleShorterPath < curr)
+            if (possibleShorterPath < curr)
                 curr = possibleShorterPath;
         }
         h += curr;
 
         H.put(currentState, h);
 
-        for(State child : currentState.getChildren()){
+        for (State child : currentState.getChildren()) {
             minCarriedPlusMinAvailable(child);
         }
     }
