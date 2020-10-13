@@ -34,10 +34,16 @@ public abstract class SearchAlgorithm {
 
         nodes.add(rootState);
         while (!nodes.isEmpty()) {
+            System.out.println("----------------------------------");
             State currentState = nodes.remove(0);
             carriedTaskSet = currentState.getCarriedTasks();
             availableTaskSet = currentState.getAvailableTasks();
             vehicle = currentState.getVehicle();
+            int carriedTasksWeight = currentState.getCarriedTasksWeights();
+
+            System.out.println("CURRENT AVAILABLE: " + availableTaskSet);
+            System.out.println("CURRENT CARRIED: " + carriedTaskSet + "\n" + currentState.getCurrentCity());
+
 
             Set<State> children = new HashSet<>();
             if (carriedTaskSet.isEmpty() && availableTaskSet.isEmpty()) {
@@ -49,9 +55,9 @@ public abstract class SearchAlgorithm {
                 continue;
             }
 
-            Set<Task> newCarriedTaskSet = new HashSet<>(carriedTaskSet);
-            Set<Task> newAvailableTaskSet = new HashSet<>(availableTaskSet);
             for (City nextStateCity: topology.cities()) {
+                Set<Task> newCarriedTaskSet = new HashSet<>(carriedTaskSet);
+                Set<Task> newAvailableTaskSet = new HashSet<>(availableTaskSet);
 
                 if (currentState.getCurrentCity().equals(nextStateCity)) {  // if I am in nextStateCity continue
                     continue;
@@ -61,26 +67,36 @@ public abstract class SearchAlgorithm {
                 for (Task carriedTask: carriedTaskSet) {    // deliver tasks that are for that city
                     if (carriedTask.deliveryCity.equals(nextStateCity)) {
                         newCarriedTaskSet.remove(carriedTask);
+                        carriedTasksWeight -= carriedTask.weight;
                         hasDeliveredTasks = true;
                     }
                 }
                 if (hasDeliveredTasks) {  // child when you just deliver the tasks you have for that city
-                    State newState = new State(nextStateCity, newCarriedTaskSet, new HashSet<>(availableTaskSet), vehicle,
+                    System.out.println("pravim dete 1");
+                    System.out.println("CURRENT AVAILABLE: " + newAvailableTaskSet);
+                    System.out.println("CURRENT CARRIED: " + newCarriedTaskSet + "\n" + nextStateCity);
+
+                    State newState = new State(nextStateCity, newCarriedTaskSet, newAvailableTaskSet, vehicle,
                             currentState);
                     children.add(newState);
                 }
 
                 for (Task availableTask: availableTaskSet) { // possible states when you pick up new task
 
+                    // todo: izracunati novi
                     // if you are not going to the city where the task is located or you don't have enough capacity continue
                     if (nextStateCity.equals(availableTask.pickupCity) &&
-                            currentState.getCarriedTasksWeights() + availableTask.weight <= vehicle.capacity()) {
+                            carriedTasksWeight + availableTask.weight <= vehicle.capacity()) {
                         newAvailableTaskSet.remove(availableTask);
 
-                        Set<Task> novi = new HashSet<>(newCarriedTaskSet);
-                        novi.add(availableTask);
-                        State newState = new State(nextStateCity, novi, newAvailableTaskSet, vehicle,
+                        Set<Task> noviZaNosenje = new HashSet<>(newCarriedTaskSet);
+                        noviZaNosenje.add(availableTask);
+                        State newState = new State(nextStateCity, noviZaNosenje, newAvailableTaskSet, vehicle,
                                 currentState);
+
+                        System.out.println("pravim dete 2");
+                        System.out.println("CURRENT AVAILABLE: " + newAvailableTaskSet);
+                        System.out.println("CURRENT CARRIED: " + noviZaNosenje + "\n" + nextStateCity);
 
                         children.add(newState);
                     }
@@ -102,10 +118,17 @@ public abstract class SearchAlgorithm {
         List<Action> actions = new ArrayList<>();
 
         State currentState = this.getGoalState();
-        while (currentState.getParent().getParent() != null) {
+        while (currentState.getParent() != null) {
             State parent = currentState.getParent();
 
+            System.out.println("NOVA ITER");
+
+            System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            System.out.println("AVAILABLE: " + currentState.getAvailableTasks());
+            System.out.println("CARRIED: " + currentState.getCarriedTasks() + "\n" + currentState.getCurrentCity());
+
             // get which tasks are delivered
+
             Set<Task> parentCarriedTasks = parent.getCarriedTasks();
             Set<Task> currentCarriedTasks = currentState.getCarriedTasks();
             List<Task> deliveredTasks = parentCarriedTasks.stream()
@@ -114,6 +137,10 @@ public abstract class SearchAlgorithm {
             for (Task deliveredTask: deliveredTasks) {
                 actions.add(new Action.Delivery(deliveredTask));
             }
+//            System.out.println("taskovi za delivery \n" + deliveredTasks);
+            System.out.println("PARENT CARRIED: " + parentCarriedTasks + "\n" + parent.getCurrentCity());
+            System.out.println("CURRENT CARRIED: " + currentCarriedTasks + "\n" + currentState.getCurrentCity());
+
 
             // get which tasks are picked up
             Set<Task> parentAvailableTasks = parent.getAvailableTasks();
@@ -124,8 +151,14 @@ public abstract class SearchAlgorithm {
             for (Task pickedTask: pickedTasks) { // TODO: videti da li uzimamo jedan ili vise
                 actions.add(new Action.Pickup(pickedTask));
             }
+//            System.out.println("taskovi za pickup \n" + deliveredTasks);
+            System.out.println("PARENT AVAILABLE: " + parentAvailableTasks + "\n" + parent.getCurrentCity());
+            System.out.println("CURRENT AVAILABLE: " + currentAvailableTasks + "\n" + currentState.getCurrentCity());
 
-            actions.add(new Action.Move(parent.getCurrentCity()));
+            List<City> intermediateCities = currentState.getCurrentCity().pathTo(parent.getCurrentCity());
+            for (City city: intermediateCities) {
+                actions.add(new Action.Move(city));
+            }
             currentState = parent;
         }
 
@@ -135,5 +168,6 @@ public abstract class SearchAlgorithm {
             plan.append(action);
         }
         return plan;
+//        return null;
     }
 }
