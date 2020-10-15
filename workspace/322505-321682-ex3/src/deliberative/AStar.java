@@ -2,7 +2,6 @@ package deliberative;
 
 import logist.simulation.Vehicle;
 import logist.task.Task;
-import logist.topology.Topology;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -12,24 +11,19 @@ import java.util.Set;
 
 public class AStar extends SearchAlgorithm {
 
-    private final String heuristicName;
     private final PriorityQueue<State> Q;
     private final Set<State> C;
-    private final Map<State, State> parentOptimal;
     private final Map<State, Double> H;
-    private List<State> optimalPath;
+    private final String heuristicName;
 
-    public AStar(Set<Task> availableTaskSet, Set<Task> carriedTaskSet, Topology topology, Vehicle vehicle,
+    public AStar(Set<Task> availableTaskSet, Set<Task> carriedTaskSet, Vehicle vehicle,
                  String heuristicName) {
-        super(availableTaskSet, carriedTaskSet, topology, vehicle);
+        super(availableTaskSet, carriedTaskSet, vehicle);
 
         this.Q = new PriorityQueue<>(1, Comparator.comparingDouble(this::calculateF));
         this.C = new HashSet<>();
         this.H = new HashMap<>();
-        this.parentOptimal = new HashMap<>();
-        this.optimalPath = new ArrayList<>();
         this.heuristicName = heuristicName;
-
     }
 
     private double calculateF(State state) {
@@ -37,7 +31,7 @@ public class AStar extends SearchAlgorithm {
     }
 
     @Override
-    public List<State> getOptimalPath() {
+    public State getGoalState() {
         calculateHeuristic();
         G.put(rootState, 0d);
         Q.add(rootState);
@@ -52,39 +46,32 @@ public class AStar extends SearchAlgorithm {
                 goalState = currentState;
                 break;
             }
+
             Set<State> children = currentState.getChildren();
             for (State child : children) {
                 if (!Q.contains(child) && !C.contains(child)) {
                     G.put(child, G.get(currentState) + currentState.getCurrentCity().distanceTo(child.getCurrentCity()));
                     Q.add(child);
                     parentOptimal.put(child, currentState);
-                } else {
-                    double possibleBetterPath = G.get(currentState) +
-                            currentState.getCurrentCity().distanceTo(child.getCurrentCity());
-                    if (possibleBetterPath < G.get(child)) {
-                        parentOptimal.put(child, currentState);
-                        G.put(child, possibleBetterPath);
-                        if (C.contains(child)) {
-                            C.remove(child);
-                            Q.add(child);
-                        }
+                    continue;
+                }
+
+                double possibleBetterPath = G.get(currentState) +
+                        currentState.getCurrentCity().distanceTo(child.getCurrentCity());
+                if (possibleBetterPath < G.get(child)) {
+                    parentOptimal.put(child, currentState);
+                    G.put(child, possibleBetterPath);
+
+                    if (C.contains(child)) {
+                        C.remove(child);
+                        Q.add(child);
                     }
                 }
             }
             C.add(currentState);
         }
 
-        if (goalState != null) {
-            currentState = goalState;
-            while (!currentState.equals(rootState)) {
-                optimalPath.add(currentState);
-                currentState = parentOptimal.get(currentState);
-            }
-            optimalPath.add(rootState);
-        }
-        Collections.reverse(optimalPath);
-
-        return optimalPath;
+        return goalState;
     }
 
     private void calculateHeuristic() {
@@ -100,19 +87,21 @@ public class AStar extends SearchAlgorithm {
         double h = 0d;
         double curr = currentState.getCarriedTasks().isEmpty() ? 0d : Double.MAX_VALUE;
         for (Task task : currentState.getCarriedTasks()) {
-            if (currentState.getCurrentCity().distanceTo(task.deliveryCity) < curr)
+            if (currentState.getCurrentCity().distanceTo(task.deliveryCity) < curr) {
                 curr = currentState.getCurrentCity().distanceTo(task.deliveryCity);
+            }
         }
+
         h += curr;
         curr = currentState.getAvailableTasks().isEmpty() ? 0d : Double.MAX_VALUE;
         for (Task task : currentState.getAvailableTasks()) {
             double possibleShorterPath = currentState.getCurrentCity().distanceTo(task.pickupCity) +
                     task.pickupCity.distanceTo(task.deliveryCity);
-            if (possibleShorterPath < curr)
+            if (possibleShorterPath < curr) {
                 curr = possibleShorterPath;
+            }
         }
         h += curr;
-
         H.put(currentState, h);
 
         for (State child : currentState.getChildren()) {

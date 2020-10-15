@@ -3,7 +3,6 @@ package deliberative;
 import logist.plan.Plan;
 import logist.simulation.Vehicle;
 import logist.task.Task;
-import logist.topology.Topology;
 import logist.topology.Topology.City;
 
 import java.util.*;
@@ -13,21 +12,19 @@ public abstract class SearchAlgorithm {
 
     private Set<Task> availableTaskSet;
     private Set<Task> carriedTaskSet;
-    private Topology topology;
     private Vehicle vehicle;
 
     protected State rootState;
-
     private Map<Integer, State> hashStateMap;
     private Map<City, List<Task>> nextCityTasksMap;
     private List<Task> newCarriedTaskSet;
     private List<Task> newAvailableTaskSet;
     protected final Map<State, Double> G;
+    protected final Map<State, State> parentOptimal;
 
-    public SearchAlgorithm(Set<Task> availableTaskSet, Set<Task> carriedTaskSet, Topology topology, Vehicle vehicle) {
+    public SearchAlgorithm(Set<Task> availableTaskSet, Set<Task> carriedTaskSet, Vehicle vehicle) {
         this.availableTaskSet = availableTaskSet;
         this.carriedTaskSet = carriedTaskSet;
-        this.topology = topology;
         this.vehicle = vehicle;
 
         this.hashStateMap = new HashMap<>();
@@ -35,6 +32,8 @@ public abstract class SearchAlgorithm {
         this.newCarriedTaskSet = new ArrayList<>();
         this.newAvailableTaskSet = new ArrayList<>();
         this.G = new HashMap<>();
+        this.parentOptimal = new HashMap<>();
+
         this.rootState = createGraphAndGetRoot();
     }
 
@@ -61,20 +60,20 @@ public abstract class SearchAlgorithm {
 
                 // collect all the next cities it makes sense to go to and their tasks
                 nextCityTasksMap.clear();
-                for (Task t: newAvailableTaskSet) { // the ones in which you can pick up a task
+                for (Task t : newAvailableTaskSet) { // the ones in which you can pick up a task
                     nextCityTasksMap.putIfAbsent(t.pickupCity, new ArrayList<>());
                     List<Task> values = nextCityTasksMap.get(t.pickupCity);
                     values.add(t);
                     nextCityTasksMap.put(t.pickupCity, values);
                 }
-                for (Task t: newCarriedTaskSet) { // the ones in which you can deliver a task
+                for (Task t : newCarriedTaskSet) { // the ones in which you can deliver a task
                     nextCityTasksMap.putIfAbsent(t.deliveryCity, new ArrayList<>());
                     List<Task> values = nextCityTasksMap.get(t.deliveryCity);
                     values.add(t);
                     nextCityTasksMap.put(t.deliveryCity, values);
                 }
 
-                for (Map.Entry<City, List<Task>> entry: nextCityTasksMap.entrySet()) {
+                for (Map.Entry<City, List<Task>> entry : nextCityTasksMap.entrySet()) {
                     City nextCity = entry.getKey();
                     List<Task> allTasks = entry.getValue();
 
@@ -88,7 +87,7 @@ public abstract class SearchAlgorithm {
 
                     boolean hasDeliveredTasks = false;
                     List<Task> deliveryTasks = new ArrayList<>();
-                    for (Task task: allTasks) {
+                    for (Task task : allTasks) {
                         if (task.deliveryCity.equals(nextCity)) {
                             deliveryTasks.add(task);
                             carriedTasksWeight -= task.weight;
@@ -105,7 +104,7 @@ public abstract class SearchAlgorithm {
                     }
 
                     // todo: sve kombinacije stanja!!!
-                    for (Task task: allTasks) { // only pick up tasks are left
+                    for (Task task : allTasks) { // only pick up tasks are left
                         if (carriedTasksWeight + task.weight > vehicle.capacity()) {
                             continue;
                         }
@@ -121,7 +120,7 @@ public abstract class SearchAlgorithm {
                 }
 
                 currentState.setChildren(children);
-                for (State state: children) {
+                for (State state : children) {
                     if (!hashStateMap.containsKey(state.hashCode())) {
                         hashStateMap.put(state.hashCode(), state);
                         unvisited.add(state);
@@ -133,19 +132,36 @@ public abstract class SearchAlgorithm {
         return rootState;
     }
 
-    abstract List<State> getOptimalPath();
+    abstract State getGoalState();
+
+    private List<State> createOptimalPath(State goalState) {
+        List<State> optimalPath = new ArrayList<>();
+
+        if (goalState == null) {
+            return null;
+        }
+        State currentState = goalState;
+        while (!currentState.equals(rootState)) {
+            optimalPath.add(currentState);
+            currentState = parentOptimal.get(currentState);
+        }
+        optimalPath.add(rootState);
+        Collections.reverse(optimalPath);
+
+        return optimalPath;
+    }
 
     public Plan getPlan() {
         City current = vehicle.getCurrentCity();
         Plan plan = new Plan(current);
-        List<State> optimalPath = this.getOptimalPath();
+        List<State> optimalPath = createOptimalPath(this.getGoalState());
 
         State previousState = optimalPath.get(0);
         for (int i = 1; i < optimalPath.size(); i++) {
             State currentState = optimalPath.get(i);
 
             List<City> intermediateCities = previousState.getCurrentCity().pathTo(currentState.getCurrentCity());
-            for (City city: intermediateCities) {
+            for (City city : intermediateCities) {
                 plan.appendMove(city);
             }
 
@@ -155,7 +171,7 @@ public abstract class SearchAlgorithm {
             List<Task> deliveredTasks = previousCarriedTasks.stream()
                     .filter(element -> !currentCarriedTasks.contains(element))
                     .collect(Collectors.toList());
-            for (Task deliveredTask: deliveredTasks) {
+            for (Task deliveredTask : deliveredTasks) {
                 plan.appendDelivery(deliveredTask);
             }
 
@@ -165,12 +181,14 @@ public abstract class SearchAlgorithm {
             List<Task> pickedTasks = previousAvailableTasks.stream()
                     .filter(element -> !currentAvailableTasks.contains(element))
                     .collect(Collectors.toList());
-            for (Task pickedTask: pickedTasks) {
+            for (Task pickedTask : pickedTasks) {
                 plan.appendPickup(pickedTask);
             }
 
             previousState = currentState;
         }
+
+        System.out.println(plan);
 
         return plan;
     }

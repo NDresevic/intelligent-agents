@@ -16,14 +16,12 @@ public class DeliberativeMain implements DeliberativeBehavior {
 
     private Agent agent;
     private Set<Task> carriedTasks;
-    private Topology topology;
     private String algorithmName;
     private String heuristicName;
 
     @Override
     public void setup(Topology topology, TaskDistribution taskDistribution, Agent agent) {
         this.carriedTasks = new HashSet<>();
-        this.topology = topology;
         this.agent = agent;
 
         this.algorithmName = agent.readProperty("algorithm", String.class, "BFS");
@@ -39,17 +37,20 @@ public class DeliberativeMain implements DeliberativeBehavior {
 
     @Override
     public Plan plan(Vehicle vehicle, TaskSet taskSet) {
+        Plan plan;
         if (algorithmName.equalsIgnoreCase("BFS")) {
-            return new BFS(taskSet, carriedTasks, topology, vehicle).getPlan();
+            plan = new BFS(taskSet, carriedTasks, vehicle).getPlan();
         } else {
-            return new AStar(taskSet, carriedTasks, topology, vehicle, heuristicName).getPlan();
+            plan = new AStar(taskSet, carriedTasks, vehicle, heuristicName).getPlan();
         }
+
+        System.out.println("Search algorithm: " + algorithmName);
+        System.out.println("Total distance: " + plan.totalDistance());
+        return plan;
     }
 
     @Override
     public void planCancelled(TaskSet carriedTasks) {
         this.carriedTasks = carriedTasks;
-        System.out.println(agent.getTotalCost());
-        System.out.println(agent.getTotalDistance());
     }
 }

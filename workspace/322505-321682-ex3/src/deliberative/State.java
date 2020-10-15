@@ -22,7 +22,7 @@ public class State {
         this.currentCity = currentCity;
         this.carriedTasks = carriedTasks;
         this.availableTasks = availableTasks;
-        for (Task task: carriedTasks) {
+        for (Task task : carriedTasks) {
             this.carriedTasksWeights += task.weight;
         }
         this.vehicle = vehicle;
