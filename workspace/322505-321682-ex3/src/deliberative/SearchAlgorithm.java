@@ -1,6 +1,5 @@
 package deliberative;
 
-import logist.plan.Action;
 import logist.plan.Plan;
 import logist.simulation.Vehicle;
 import logist.task.Task;
@@ -8,6 +7,7 @@ import logist.topology.Topology;
 import logist.topology.Topology.City;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public abstract class SearchAlgorithm {
 
@@ -104,6 +104,7 @@ public abstract class SearchAlgorithm {
                         children.add(nextState);
                     }
 
+                    // todo: sve kombinacije stanja!!!
                     for (Task task: allTasks) { // only pick up tasks are left
                         if (carriedTasksWeight + task.weight > vehicle.capacity()) {
                             continue;
@@ -132,16 +133,45 @@ public abstract class SearchAlgorithm {
         return rootState;
     }
 
-    abstract State getGoalState();
+    abstract List<State> getOptimalPath();
 
     public Plan getPlan() {
         City current = vehicle.getCurrentCity();
         Plan plan = new Plan(current);
-        List<Action> actions = new ArrayList<>();
+        List<State> optimalPath = this.getOptimalPath();
 
-        State currentState = this.getGoalState();
-        System.out.println("plan");
+        State previousState = optimalPath.get(0);
+        for (int i = 1; i < optimalPath.size(); i++) {
+            State currentState = optimalPath.get(i);
 
-        return null;
+            List<City> intermediateCities = previousState.getCurrentCity().pathTo(currentState.getCurrentCity());
+            for (City city: intermediateCities) {
+                plan.appendMove(city);
+            }
+
+            // calculate which tasks are delivered
+            Set<Task> previousCarriedTasks = previousState.getCarriedTasks();
+            Set<Task> currentCarriedTasks = currentState.getCarriedTasks();
+            List<Task> deliveredTasks = previousCarriedTasks.stream()
+                    .filter(element -> !currentCarriedTasks.contains(element))
+                    .collect(Collectors.toList());
+            for (Task deliveredTask: deliveredTasks) {
+                plan.appendDelivery(deliveredTask);
+            }
+
+            // calculate which tasks are picked up
+            Set<Task> previousAvailableTasks = previousState.getAvailableTasks();
+            Set<Task> currentAvailableTasks = currentState.getAvailableTasks();
+            List<Task> pickedTasks = previousAvailableTasks.stream()
+                    .filter(element -> !currentAvailableTasks.contains(element))
+                    .collect(Collectors.toList());
+            for (Task pickedTask: pickedTasks) {
+                plan.appendPickup(pickedTask);
+            }
+
+            previousState = currentState;
+        }
+
+        return plan;
     }
 }

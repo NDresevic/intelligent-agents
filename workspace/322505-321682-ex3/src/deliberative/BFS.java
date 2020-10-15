@@ -13,14 +13,10 @@ public class BFS extends SearchAlgorithm {
     }
 
     @Override
-    public State getGoalState() {
-//        System.out.println("root: " + rootState);
-
-//        System.out.println("graph: " + breadthFirstTraversal(rootState));
+    public List<State> getOptimalPath() {
         State goalState = breadthFirstTraversal(rootState);
-//        System.out.println(goalState.getCurrentCity());
 
-        return goalState;
+        return new ArrayList<>();
     }
 
     private State breadthFirstTraversal(State rootState) {
@@ -50,6 +46,9 @@ public class BFS extends SearchAlgorithm {
         System.out.println("BROJ STANJA: " + visited.size());
         //return visited;
 
+        for (State state: visited) {
+            System.out.println(state);
+        }
 //        System.out.println(visited);
         return optimalGoalState;
     }

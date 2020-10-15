@@ -8,7 +8,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 
-
 import java.util.Set;
 
 public class AStar extends SearchAlgorithm {
@@ -18,14 +17,13 @@ public class AStar extends SearchAlgorithm {
     private final Set<State> C;
     private final Map<State, State> parentOptimal;
     private final Map<State, Double> H;
-    List<State> optimalPath;
+    private List<State> optimalPath;
 
     public AStar(Set<Task> availableTaskSet, Set<Task> carriedTaskSet, Topology topology, Vehicle vehicle,
                  String heuristicName) {
         super(availableTaskSet, carriedTaskSet, topology, vehicle);
 
-        this.Q = new PriorityQueue<>(1, (state1, state2)
-                -> Double.valueOf(calculateF(state1)).compareTo(Double.valueOf(calculateF(state2))));
+        this.Q = new PriorityQueue<>(1, Comparator.comparingDouble(this::calculateF));
         this.C = new HashSet<>();
         this.H = new HashMap<>();
         this.parentOptimal = new HashMap<>();
@@ -39,7 +37,7 @@ public class AStar extends SearchAlgorithm {
     }
 
     @Override
-    public State getGoalState() {
+    public List<State> getOptimalPath() {
         calculateHeuristic();
         G.put(rootState, 0d);
         Q.add(rootState);
@@ -77,26 +75,20 @@ public class AStar extends SearchAlgorithm {
         }
 
         if (goalState != null) {
-            if (goalState != null) {
-                currentState = goalState;
-                    while (!currentState.equals(rootState)) {
-                        optimalPath.add(currentState);
-                        currentState = parentOptimal.get(currentState);
-                    }
+            currentState = goalState;
+            while (!currentState.equals(rootState)) {
+                optimalPath.add(currentState);
+                currentState = parentOptimal.get(currentState);
             }
             optimalPath.add(rootState);
         }
         Collections.reverse(optimalPath);
 
-        for(State s : optimalPath)
-            System.out.println(s + "\n");
-
-        return goalState;
+        return optimalPath;
     }
 
     private void calculateHeuristic() {
         try {
-            System.out.println(heuristicName);
             Method method = this.getClass().getDeclaredMethod(heuristicName, rootState.getClass());
             method.invoke(this, rootState);
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {

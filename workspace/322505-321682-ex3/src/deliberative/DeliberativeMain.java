@@ -14,44 +14,42 @@ import java.util.Set;
 
 public class DeliberativeMain implements DeliberativeBehavior {
 
+    private Agent agent;
     private Set<Task> carriedTasks;
     private Topology topology;
-    private int capacity;
     private String algorithmName;
     private String heuristicName;
-
-    private SearchAlgorithm searchAlgorithm;
 
     @Override
     public void setup(Topology topology, TaskDistribution taskDistribution, Agent agent) {
         this.carriedTasks = new HashSet<>();
         this.topology = topology;
-        this.capacity = agent.vehicles().get(0).capacity();
+        this.agent = agent;
 
         this.algorithmName = agent.readProperty("algorithm", String.class, "BFS");
         if (!algorithmName.equalsIgnoreCase("BFS") && !algorithmName.equalsIgnoreCase("ASTAR"))
             throw new AssertionError("Unsupported algorithm.");
-        if (this.algorithmName.equalsIgnoreCase("ASTAR"))
+
+        if (this.algorithmName.equalsIgnoreCase("ASTAR")) {
             this.heuristicName = agent.readProperty("heuristic", String.class, "");
-        else
+        } else {
             this.heuristicName = null;
+        }
     }
 
     @Override
     public Plan plan(Vehicle vehicle, TaskSet taskSet) {
-//        System.out.println(vehicle.getCurrentCity());
-//        for(Task task : taskSet)
-//            System.out.println(task);
-
-        Set<Task> availableTasks = new HashSet<>(taskSet);
-        if (algorithmName.equalsIgnoreCase("BFS"))
-            return new BFS(availableTasks, carriedTasks, topology, vehicle).getPlan();
-        else
-            return new AStar(availableTasks, carriedTasks, topology, vehicle, heuristicName).getPlan();
+        if (algorithmName.equalsIgnoreCase("BFS")) {
+            return new BFS(taskSet, carriedTasks, topology, vehicle).getPlan();
+        } else {
+            return new AStar(taskSet, carriedTasks, topology, vehicle, heuristicName).getPlan();
+        }
     }
 
     @Override
     public void planCancelled(TaskSet carriedTasks) {
         this.carriedTasks = carriedTasks;
+        System.out.println(agent.getTotalCost());
+        System.out.println(agent.getTotalDistance());
     }
 }

@@ -13,7 +13,8 @@
 	<agent name="deliberative-main">
 		<set class-path="bin/"/>
 		<set class-name="deliberative.DeliberativeMain"/>
-		<set algorithm="BFS"/>
+		<set algorithm="ASTAR"/>
+		<set heuristic="minCarriedPlusMinAvailable"/>
 	</agent>
 
 	<agent name="deliberative-astar">
