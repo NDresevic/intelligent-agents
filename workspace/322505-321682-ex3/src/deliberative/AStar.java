@@ -17,7 +17,6 @@ public class AStar extends SearchAlgorithm {
     private final PriorityQueue<State> Q;
     private final Set<State> C;
     private final Map<State, State> parentOptimal;
-    private final Map<State, Double> G;
     private final Map<State, Double> H;
     List<State> optimalPath;
 
@@ -28,7 +27,6 @@ public class AStar extends SearchAlgorithm {
         this.Q = new PriorityQueue<>(1, (state1, state2)
                 -> Double.valueOf(calculateF(state1)).compareTo(Double.valueOf(calculateF(state2))));
         this.C = new HashSet<>();
-        this.G = new HashMap<>();
         this.H = new HashMap<>();
         this.parentOptimal = new HashMap<>();
         this.optimalPath = new ArrayList<>();

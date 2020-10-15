@@ -22,6 +22,7 @@ public abstract class SearchAlgorithm {
     private Map<City, List<Task>> nextCityTasksMap;
     private List<Task> newCarriedTaskSet;
     private List<Task> newAvailableTaskSet;
+    protected final Map<State, Double> G;
 
     public SearchAlgorithm(Set<Task> availableTaskSet, Set<Task> carriedTaskSet, Topology topology, Vehicle vehicle) {
         this.availableTaskSet = availableTaskSet;
@@ -33,6 +34,7 @@ public abstract class SearchAlgorithm {
         this.nextCityTasksMap = new HashMap<>();
         this.newCarriedTaskSet = new ArrayList<>();
         this.newAvailableTaskSet = new ArrayList<>();
+        this.G = new HashMap<>();
         this.rootState = createGraphAndGetRoot();
     }
 
