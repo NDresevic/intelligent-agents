@@ -14,11 +14,11 @@ public class BFS extends SearchAlgorithm {
 
     @Override
     public State getGoalState() {
-        System.out.println("root: " + rootState);
+//        System.out.println("root: " + rootState);
 
 //        System.out.println("graph: " + breadthFirstTraversal(rootState));
         State goalState = breadthFirstTraversal(rootState);
-        System.out.println(goalState);
+//        System.out.println(goalState.getCurrentCity());
 
         return goalState;
     }
@@ -34,10 +34,10 @@ public class BFS extends SearchAlgorithm {
         while (!queue.isEmpty()) {
             State currentState = queue.poll();
 
-            if (currentState.isGoalState() && currentState.getCostFromRoot() < minCostFromRoot) {
-                minCostFromRoot = currentState.getCostFromRoot();
-                optimalGoalState = currentState;
-            }
+//            if (currentState.isGoalState() && currentState.getCostFromRoot() < minCostFromRoot) {
+//                minCostFromRoot = currentState.getCostFromRoot();
+//                optimalGoalState = currentState;
+//            }
 
             for (State child : currentState.getChildren()) {
                 if (!visited.contains(child)) {
@@ -47,7 +47,10 @@ public class BFS extends SearchAlgorithm {
             }
         }
 
+        System.out.println("BROJ STANJA: " + visited.size());
         //return visited;
+
+//        System.out.println(visited);
         return optimalGoalState;
     }
 }

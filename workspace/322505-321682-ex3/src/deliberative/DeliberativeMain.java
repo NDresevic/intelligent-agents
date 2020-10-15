@@ -39,10 +39,7 @@ public class DeliberativeMain implements DeliberativeBehavior {
 
     @Override
     public Plan plan(Vehicle vehicle, TaskSet taskSet) {
-        Set<Task> availableTasks = new HashSet<>();
-        for (Task task: taskSet) {
-            availableTasks.add(task);
-        }
+        Set<Task> availableTasks = new HashSet<>(taskSet);
         if (algorithmName.equalsIgnoreCase("BFS"))
             return new BFS(availableTasks, carriedTasks, topology, vehicle).getPlan();
         else
