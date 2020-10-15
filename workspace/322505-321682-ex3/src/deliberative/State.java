@@ -14,10 +14,8 @@ public class State {
     private Set<Task> carriedTasks;
     private Set<Task> availableTasks;
     private int carriedTasksWeights = 0;
-    private double costFromRoot;    // g(n)
 
     private Vehicle vehicle;
-    private State parent;
     private Set<State> children;
 
     public State(City currentCity, Set<Task> carriedTasks, Set<Task> availableTasks, Vehicle vehicle) {
@@ -28,23 +26,11 @@ public class State {
             this.carriedTasksWeights += task.weight;
         }
         this.vehicle = vehicle;
-        this.costFromRoot = 0;
-        this.parent = null;
         this.children = new HashSet<>();
-    }
-
-    public State(City currentCity, Set<Task> carriedTasks, Set<Task> availableTasks, Vehicle vehicle, State parent) {
-        this(currentCity, carriedTasks, availableTasks, vehicle);
-        this.costFromRoot = parent.costFromRoot + currentCity.distanceTo(parent.currentCity) * vehicle.costPerKm();
-        this.parent = parent;
     }
 
     public boolean isGoalState() {
         return carriedTasks.isEmpty() && availableTasks.isEmpty();
-    }
-
-    public boolean isRoot() {
-        return parent == null;
     }
 
     public Set<State> getChildren() {
@@ -53,10 +39,6 @@ public class State {
 
     public void setChildren(Set<State> children) {
         this.children = children;
-    }
-
-    public State getParent() {
-        return parent;
     }
 
     public int getCarriedTasksWeights() {
@@ -79,10 +61,6 @@ public class State {
         return vehicle;
     }
 
-    public double getCostFromRoot() {
-        return costFromRoot;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -90,13 +68,12 @@ public class State {
         State state = (State) o;
         return Objects.equals(currentCity, state.currentCity) &&
                 Objects.equals(carriedTasks, state.carriedTasks) &&
-                Objects.equals(availableTasks, state.availableTasks) &&
-                Objects.equals(parent, state.parent);
+                Objects.equals(availableTasks, state.availableTasks);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(currentCity, carriedTasks, availableTasks, parent);
+        return Objects.hash(currentCity, carriedTasks, availableTasks);
     }
 
     @Override
@@ -106,9 +83,8 @@ public class State {
                 ", carriedTasks=" + carriedTasks +
                 ", availableTasks=" + availableTasks +
                 ", carriedTasksWeights=" + carriedTasksWeights +
-                ", costFromRoot=" + costFromRoot +
                 ", vehicle=" + vehicle +
-                ", parent=" + parent +
+                ", children=" + children +
                 '}';
     }
 }

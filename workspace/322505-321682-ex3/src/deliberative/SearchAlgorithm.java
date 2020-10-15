@@ -8,7 +8,6 @@ import logist.topology.Topology;
 import logist.topology.Topology.City;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public abstract class SearchAlgorithm {
 
@@ -19,92 +18,113 @@ public abstract class SearchAlgorithm {
 
     protected State rootState;
 
+    private Map<Integer, State> hashStateMap;
+    private Map<City, List<Task>> nextCityTasksMap;
+    private List<Task> newCarriedTaskSet;
+    private List<Task> newAvailableTaskSet;
+
     public SearchAlgorithm(Set<Task> availableTaskSet, Set<Task> carriedTaskSet, Topology topology, Vehicle vehicle) {
         this.availableTaskSet = availableTaskSet;
         this.carriedTaskSet = carriedTaskSet;
         this.topology = topology;
         this.vehicle = vehicle;
 
+        this.hashStateMap = new HashMap<>();
+        this.nextCityTasksMap = new HashMap<>();
+        this.newCarriedTaskSet = new ArrayList<>();
+        this.newAvailableTaskSet = new ArrayList<>();
         this.rootState = createGraphAndGetRoot();
     }
 
     private State createGraphAndGetRoot() {
         State rootState = new State(vehicle.getCurrentCity(), carriedTaskSet, availableTaskSet, vehicle);
-        List<State> nodes = new ArrayList<>();
+        hashStateMap.put(rootState.hashCode(), rootState);
 
-        nodes.add(rootState);
-        while (!nodes.isEmpty()) {
-            System.out.println("----------------------------------");
-            State currentState = nodes.remove(0);
-            carriedTaskSet = currentState.getCarriedTasks();
-            availableTaskSet = currentState.getAvailableTasks();
+        List<State> unvisited = new ArrayList<>();
+        unvisited.add(rootState);
+        while (!unvisited.isEmpty()) {
+            State currentState = unvisited.remove(0);
+            newCarriedTaskSet = new ArrayList<>(currentState.getCarriedTasks());
+            newAvailableTaskSet = new ArrayList<>(currentState.getAvailableTasks());
             vehicle = currentState.getVehicle();
             int carriedTasksWeight = currentState.getCarriedTasksWeights();
-
-            System.out.println("CURRENT AVAILABLE: " + availableTaskSet);
-            System.out.println("CURRENT CARRIED: " + carriedTaskSet + "\n" + currentState.getCurrentCity());
-
-
             Set<State> children = new HashSet<>();
-            if (carriedTaskSet.isEmpty() && availableTaskSet.isEmpty()) {
-                State finalState = new State(currentState.getCurrentCity(), new HashSet<>(), new HashSet<>(), vehicle,
-                        currentState);
-                if (!currentState.getChildren().contains(finalState)) {
-                    children.add(finalState);
+
+            // if the state is final just add it as a child and put in map
+            if (newCarriedTaskSet.isEmpty() && newAvailableTaskSet.isEmpty()) {
+                State finalState = new State(currentState.getCurrentCity(), new HashSet<>(), new HashSet<>(), vehicle);
+                children.add(finalState);
+                hashStateMap.putIfAbsent(finalState.hashCode(), finalState);
+            } else {
+
+                // collect all the next cities it makes sense to go to and their tasks
+                nextCityTasksMap.clear();
+                for (Task t: newAvailableTaskSet) { // the ones in which you can pick up a task
+                    nextCityTasksMap.putIfAbsent(t.pickupCity, new ArrayList<>());
+                    List<Task> values = nextCityTasksMap.get(t.pickupCity);
+                    values.add(t);
+                    nextCityTasksMap.put(t.pickupCity, values);
                 }
-                continue;
-            }
-
-            for (City nextStateCity: topology.cities()) {
-                Set<Task> newCarriedTaskSet = new HashSet<>(carriedTaskSet);
-                Set<Task> newAvailableTaskSet = new HashSet<>(availableTaskSet);
-
-                if (currentState.getCurrentCity().equals(nextStateCity)) {  // if I am in nextStateCity continue
-                    continue;
+                for (Task t: newCarriedTaskSet) { // the ones in which you can deliver a task
+                    nextCityTasksMap.putIfAbsent(t.deliveryCity, new ArrayList<>());
+                    List<Task> values = nextCityTasksMap.get(t.deliveryCity);
+                    values.add(t);
+                    nextCityTasksMap.put(t.deliveryCity, values);
                 }
 
-                boolean hasDeliveredTasks = false;
-                for (Task carriedTask: carriedTaskSet) {    // deliver tasks that are for that city
-                    if (carriedTask.deliveryCity.equals(nextStateCity)) {
-                        newCarriedTaskSet.remove(carriedTask);
-                        carriedTasksWeight -= carriedTask.weight;
-                        hasDeliveredTasks = true;
+                for (Map.Entry<City, List<Task>> entry: nextCityTasksMap.entrySet()) {
+                    City nextCity = entry.getKey();
+                    List<Task> allTasks = entry.getValue();
+
+                    if (currentState.getCurrentCity().equals(nextCity)) {
+                        continue;
+                    }
+
+                    newCarriedTaskSet = new ArrayList<>(currentState.getCarriedTasks());
+                    newAvailableTaskSet = new ArrayList<>(currentState.getAvailableTasks());
+                    carriedTasksWeight = currentState.getCarriedTasksWeights();
+
+                    boolean hasDeliveredTasks = false;
+                    List<Task> deliveryTasks = new ArrayList<>();
+                    for (Task task: allTasks) {
+                        if (task.deliveryCity.equals(nextCity)) {
+                            deliveryTasks.add(task);
+                            carriedTasksWeight -= task.weight;
+                            hasDeliveredTasks = true;
+                        }
+                    }
+                    if (hasDeliveredTasks) {  // child when you just deliver the tasks you have for that city
+                        allTasks.removeAll(deliveryTasks); // remove all delivery tasks for the city
+                        newCarriedTaskSet.removeAll(deliveryTasks);
+
+                        State nextState = new State(nextCity, new HashSet<>(newCarriedTaskSet),
+                                new HashSet<>(newAvailableTaskSet), vehicle);
+                        children.add(nextState);
+                    }
+
+                    for (Task task: allTasks) { // only pick up tasks are left
+                        if (carriedTasksWeight + task.weight > vehicle.capacity()) {
+                            continue;
+                        }
+
+                        newAvailableTaskSet = new ArrayList<>(currentState.getAvailableTasks());
+                        newAvailableTaskSet.remove(task);
+                        newCarriedTaskSet = new ArrayList<>(newCarriedTaskSet);
+                        newCarriedTaskSet.add(task);
+                        State nextState = new State(nextCity, new HashSet<>(newCarriedTaskSet),
+                                new HashSet<>(newAvailableTaskSet), vehicle);
+                        children.add(nextState);
                     }
                 }
-                if (hasDeliveredTasks) {  // child when you just deliver the tasks you have for that city
-                    System.out.println("pravim dete 1");
-                    System.out.println("CURRENT AVAILABLE: " + newAvailableTaskSet);
-                    System.out.println("CURRENT CARRIED: " + newCarriedTaskSet + "\n" + nextStateCity);
 
-                    State newState = new State(nextStateCity, newCarriedTaskSet, newAvailableTaskSet, vehicle,
-                            currentState);
-                    children.add(newState);
-                }
-
-                for (Task availableTask: availableTaskSet) { // possible states when you pick up new task
-
-                    // todo: izracunati novi
-                    // if you are not going to the city where the task is located or you don't have enough capacity continue
-                    if (nextStateCity.equals(availableTask.pickupCity) &&
-                            carriedTasksWeight + availableTask.weight <= vehicle.capacity()) {
-                        newAvailableTaskSet.remove(availableTask);
-
-                        Set<Task> noviZaNosenje = new HashSet<>(newCarriedTaskSet);
-                        noviZaNosenje.add(availableTask);
-                        State newState = new State(nextStateCity, noviZaNosenje, newAvailableTaskSet, vehicle,
-                                currentState);
-
-                        System.out.println("pravim dete 2");
-                        System.out.println("CURRENT AVAILABLE: " + newAvailableTaskSet);
-                        System.out.println("CURRENT CARRIED: " + noviZaNosenje + "\n" + nextStateCity);
-
-                        children.add(newState);
+                currentState.setChildren(children);
+                for (State state: children) {
+                    if (!hashStateMap.containsKey(state.hashCode())) {
+                        hashStateMap.put(state.hashCode(), state);
+                        unvisited.add(state);
                     }
                 }
             }
-
-            currentState.setChildren(children);
-            nodes.addAll(children);
         }
 
         return rootState;
@@ -118,56 +138,8 @@ public abstract class SearchAlgorithm {
         List<Action> actions = new ArrayList<>();
 
         State currentState = this.getGoalState();
-        while (currentState.getParent() != null) {
-            State parent = currentState.getParent();
+        System.out.println("plan");
 
-            System.out.println("NOVA ITER");
-
-            System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-            System.out.println("AVAILABLE: " + currentState.getAvailableTasks());
-            System.out.println("CARRIED: " + currentState.getCarriedTasks() + "\n" + currentState.getCurrentCity());
-
-            // get which tasks are delivered
-
-            Set<Task> parentCarriedTasks = parent.getCarriedTasks();
-            Set<Task> currentCarriedTasks = currentState.getCarriedTasks();
-            List<Task> deliveredTasks = parentCarriedTasks.stream()
-                    .filter(element -> !currentCarriedTasks.contains(element))
-                    .collect(Collectors.toList());
-            for (Task deliveredTask: deliveredTasks) {
-                actions.add(new Action.Delivery(deliveredTask));
-            }
-//            System.out.println("taskovi za delivery \n" + deliveredTasks);
-            System.out.println("PARENT CARRIED: " + parentCarriedTasks + "\n" + parent.getCurrentCity());
-            System.out.println("CURRENT CARRIED: " + currentCarriedTasks + "\n" + currentState.getCurrentCity());
-
-
-            // get which tasks are picked up
-            Set<Task> parentAvailableTasks = parent.getAvailableTasks();
-            Set<Task> currentAvailableTasks = currentState.getAvailableTasks();
-            List<Task> pickedTasks = parentAvailableTasks.stream()
-                    .filter(element -> !currentAvailableTasks.contains(element))
-                    .collect(Collectors.toList());
-            for (Task pickedTask: pickedTasks) { // TODO: videti da li uzimamo jedan ili vise
-                actions.add(new Action.Pickup(pickedTask));
-            }
-//            System.out.println("taskovi za pickup \n" + deliveredTasks);
-            System.out.println("PARENT AVAILABLE: " + parentAvailableTasks + "\n" + parent.getCurrentCity());
-            System.out.println("CURRENT AVAILABLE: " + currentAvailableTasks + "\n" + currentState.getCurrentCity());
-
-            List<City> intermediateCities = currentState.getCurrentCity().pathTo(parent.getCurrentCity());
-            for (City city: intermediateCities) {
-                actions.add(new Action.Move(city));
-            }
-            currentState = parent;
-        }
-
-        Collections.reverse(actions);
-        System.out.println(actions);
-        for (Action action: actions) {
-            plan.append(action);
-        }
-        return plan;
-//        return null;
+        return null;
     }
 }
