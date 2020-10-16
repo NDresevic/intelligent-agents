@@ -113,6 +113,7 @@ public abstract class SearchAlgorithm {
                         //creating all possible combinations of picking up in pickupCity
                         List<List<Task>> subsets = generateSubsets(groupedTasks.get(pickupCity),
                                 vehicle.capacity() - carriedTasksWeight);
+                        //create new state for all possible pickup combinations
                         for (List<Task> subset : subsets) {
                             newAvailableTaskSet = new ArrayList<>(currentState.getAvailableTasks());
                             newAvailableTaskSet.removeAll(subset);
@@ -139,21 +140,21 @@ public abstract class SearchAlgorithm {
     }
 
     private List<List<Task>> generateSubsets(List<Task> tasks, int freeCapacity) {
-        int n = tasks.size();
         List<List<Task>> subsets = new ArrayList<>();
-        Map<Integer, Integer> weights = new HashMap<>();
-        // i = how many tasks subset contains
-        for (int i = 1; i < (1 << n); i++) {
+        //the weight of the current subset
+        int currentWeight;
+        // i = iterating over all possible bit combinations from 1 to pow(2,n)
+        for (int i = 1; i < (1 << tasks.size()); i++) {
             List<Task> toBeAddedSubset = new ArrayList<>();
-            weights.put(i, 0);
             boolean toAdd = true;
-            // j = task that is possibly in the subset
-            for (int j = 0; j < n; j++) {
-                // the condition fot the jth task to be in the subset
+            currentWeight = 0;
+            // j = iterate over all tasks
+            for (int j = 0; j < tasks.size(); j++) {
+                // the condition for the jth task to be in the subset
                 if ((i & (1 << j)) > 0) {
                     toBeAddedSubset.add(tasks.get(j));
-                    if (weights.get(i) + tasks.get(j).weight <= freeCapacity)
-                        weights.put(i, weights.get(i) + tasks.get(j).weight);
+                    if (currentWeight + tasks.get(j).weight <= freeCapacity) //the task can fit into the vehicle
+                        currentWeight += tasks.get(j).weight;
                     else { //the subset is too heavy and can not not fit to the vehicle
                         toAdd = false;
                         break;
@@ -163,7 +164,6 @@ public abstract class SearchAlgorithm {
             if (toAdd)
                 subsets.add(toBeAddedSubset);
         }
-        System.out.println(subsets);
         return subsets;
     }
 
