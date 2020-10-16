@@ -8,6 +8,8 @@ import logist.topology.Topology.City;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static java.util.stream.Collectors.groupingBy;
+
 public abstract class SearchAlgorithm {
 
     private Set<Task> availableTaskSet;
@@ -104,19 +106,22 @@ public abstract class SearchAlgorithm {
                         children.add(nextState);
                     }
 
-                    // todo: sve kombinacije stanja!!!
-                    for (Task task : allTasks) { // only pick up tasks are left
-                        if (carriedTasksWeight + task.weight > vehicle.capacity()) {
-                            continue;
+                    // only pick up tasks are left
+                    Map<City, List<Task>> groupedTasks = allTasks.stream()
+                            .collect(groupingBy(task -> task.pickupCity));
+                    for (City pickupCity : groupedTasks.keySet()) {
+                        //creating all possible combinations of picking up in pickupCity
+                        List<List<Task>> subsets = generateSubsets(groupedTasks.get(pickupCity),
+                                vehicle.capacity() - carriedTasksWeight);
+                        for (List<Task> subset : subsets) {
+                            newAvailableTaskSet = new ArrayList<>(currentState.getAvailableTasks());
+                            newAvailableTaskSet.removeAll(subset);
+                            newCarriedTaskSet = new ArrayList<>(newCarriedTaskSet);
+                            newCarriedTaskSet.addAll(subset);
+                            State nextState = new State(nextCity, new HashSet<>(newCarriedTaskSet),
+                                    new HashSet<>(newAvailableTaskSet), vehicle);
+                            children.add(nextState);
                         }
-
-                        newAvailableTaskSet = new ArrayList<>(currentState.getAvailableTasks());
-                        newAvailableTaskSet.remove(task);
-                        newCarriedTaskSet = new ArrayList<>(newCarriedTaskSet);
-                        newCarriedTaskSet.add(task);
-                        State nextState = new State(nextCity, new HashSet<>(newCarriedTaskSet),
-                                new HashSet<>(newAvailableTaskSet), vehicle);
-                        children.add(nextState);
                     }
                 }
 
@@ -131,6 +136,35 @@ public abstract class SearchAlgorithm {
         }
 
         return rootState;
+    }
+
+    private List<List<Task>> generateSubsets(List<Task> tasks, int freeCapacity) {
+        int n = tasks.size();
+        List<List<Task>> subsets = new ArrayList<>();
+        Map<Integer, Integer> weights = new HashMap<>();
+        // i = how many tasks subset contains
+        for (int i = 1; i < (1 << n); i++) {
+            List<Task> toBeAddedSubset = new ArrayList<>();
+            weights.put(i, 0);
+            boolean toAdd = true;
+            // j = task that is possibly in the subset
+            for (int j = 0; j < n; j++) {
+                // the condition fot the jth task to be in the subset
+                if ((i & (1 << j)) > 0) {
+                    toBeAddedSubset.add(tasks.get(j));
+                    if (weights.get(i) + tasks.get(j).weight <= freeCapacity)
+                        weights.put(i, weights.get(i) + tasks.get(j).weight);
+                    else { //the subset is too heavy and can not not fit to the vehicle
+                        toAdd = false;
+                        break;
+                    }
+                }
+            }
+            if (toAdd)
+                subsets.add(toBeAddedSubset);
+        }
+        System.out.println(subsets);
+        return subsets;
     }
 
     abstract State getGoalState();
