@@ -21,6 +21,7 @@ public abstract class SearchAlgorithm {
     private List<Task> newAvailableTaskSet;
     protected final Map<State, Double> G;
     protected final Map<State, State> parentOptimal;
+    protected int visitedStates;
 
     public SearchAlgorithm(Set<Task> availableTaskSet, Set<Task> carriedTaskSet, Vehicle vehicle) {
         this.availableTaskSet = availableTaskSet;
@@ -33,7 +34,7 @@ public abstract class SearchAlgorithm {
         this.newAvailableTaskSet = new ArrayList<>();
         this.G = new HashMap<>();
         this.parentOptimal = new HashMap<>();
-
+        this.visitedStates = 0;
         this.rootState = createGraphAndGetRoot();
     }
 
@@ -148,6 +149,9 @@ public abstract class SearchAlgorithm {
         optimalPath.add(rootState);
         Collections.reverse(optimalPath);
 
+//        for(State state:optimalPath)
+//            System.out.println(state);
+
         return optimalPath;
     }
 
@@ -187,8 +191,6 @@ public abstract class SearchAlgorithm {
 
             previousState = currentState;
         }
-
-        System.out.println(plan);
 
         return plan;
     }

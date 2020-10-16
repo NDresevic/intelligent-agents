@@ -21,18 +21,19 @@ public class BFS extends SearchAlgorithm {
         visited.add(rootState);
         G.put(rootState, 0d);
         while (!queue.isEmpty()) {
+            visitedStates++;
             State currentState = queue.poll();
-            if (currentState.isGoalState() && G.get(currentState) < costFromRoot) {
+            if (currentState.isFinalState() && G.get(currentState) < costFromRoot) {
                 costFromRoot = G.get(currentState);
                 goalState = currentState;
             }
 
             for (State child : currentState.getChildren()) {
                 G.putIfAbsent(child, Double.MAX_VALUE);
-                double possiblyShorterPath = G.get(currentState) +
+                double pathOverCurrentState = G.get(currentState) +
                         currentState.getCurrentCity().distanceTo(child.getCurrentCity());
-                if (possiblyShorterPath < G.get(child)) {
-                    G.put(child, possiblyShorterPath);
+                if (pathOverCurrentState < G.get(child)) {
+                    G.put(child, pathOverCurrentState);
                     parentOptimal.put(child, currentState);
                 }
 

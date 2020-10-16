@@ -29,7 +29,7 @@ public class State {
         this.children = new HashSet<>();
     }
 
-    public boolean isGoalState() {
+    public boolean isFinalState() {
         return carriedTasks.isEmpty() && availableTasks.isEmpty();
     }
 
@@ -83,8 +83,8 @@ public class State {
                 ", carriedTasks=" + carriedTasks +
                 ", availableTasks=" + availableTasks +
                 ", carriedTasksWeights=" + carriedTasksWeights +
-                ", vehicle=" + vehicle +
-                ", children=" + children +
+                //", vehicle=" + vehicle +
+                //", children=" + children +
                 '}';
     }
 }

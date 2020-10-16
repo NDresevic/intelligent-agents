@@ -37,15 +37,25 @@ public class DeliberativeMain implements DeliberativeBehavior {
 
     @Override
     public Plan plan(Vehicle vehicle, TaskSet taskSet) {
-        Plan plan;
-        if (algorithmName.equalsIgnoreCase("BFS")) {
-            plan = new BFS(taskSet, carriedTasks, vehicle).getPlan();
-        } else {
-            plan = new AStar(taskSet, carriedTasks, vehicle, heuristicName).getPlan();
+
+        System.out.println("Starting city:" + vehicle.getCurrentCity());
+        System.out.println("Tasks:");
+        for (Task task : taskSet) {
+            System.out.println(task.id + ": from " + task.pickupCity + " to " + task.deliveryCity);
         }
+
+        SearchAlgorithm algorithm;
+        if (algorithmName.equalsIgnoreCase("BFS")) {
+            algorithm = new BFS(taskSet, carriedTasks, vehicle);
+        } else {
+            algorithm = new AStar(taskSet, carriedTasks, vehicle, heuristicName);
+        }
+
+        Plan plan = algorithm.getPlan();
 
         System.out.println("Search algorithm: " + algorithmName);
         System.out.println("Total distance: " + plan.totalDistance());
+        System.out.println("Visited states in graph: " + algorithm.visitedStates);
         return plan;
     }
 
