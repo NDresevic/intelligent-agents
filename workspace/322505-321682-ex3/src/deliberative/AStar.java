@@ -104,7 +104,7 @@ public class AStar extends SearchAlgorithm {
             }
         }
         h += curr;
-        H.put(currentState, h);
+        H.put(currentState, h * vehicle.costPerKm());
 
         for (State child : currentState.getChildren()) {
             minCarriedPlusMinAvailable(child);

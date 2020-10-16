@@ -12,7 +12,7 @@ public abstract class SearchAlgorithm {
 
     private Set<Task> availableTaskSet;
     private Set<Task> carriedTaskSet;
-    private Vehicle vehicle;
+    protected Vehicle vehicle;
 
     protected State rootState;
     private Map<Integer, State> hashStateMap;

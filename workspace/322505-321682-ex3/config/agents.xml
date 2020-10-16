@@ -23,5 +23,12 @@
 		<set algorithm="ASTAR"/>
 		<set heuristic="minCarriedPlusMinAvailable"/>
 	</agent>
+
+	<agent name="deliberative-astar-zero">
+		<set class-path="bin/"/>
+		<set class-name="deliberative.DeliberativeMain"/>
+		<set algorithm="ASTAR"/>
+		<set heuristic="zeroHeuristic"/>
+	</agent>
 	
 </agents>
