@@ -44,6 +44,8 @@ public class BFS extends SearchAlgorithm {
             }
         }
 
+        System.out.println("COUNT VISITED: " + visited.size());
+
         return goalState;
     }
 }

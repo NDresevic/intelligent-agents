@@ -44,9 +44,6 @@ public class AStar extends SearchAlgorithm {
             visitedStates++;
             currentState = Q.remove();
 
-            if(currentState.isFinalState() && !currentState.getChildren().isEmpty())
-                System.err.println("NEMOGUCE");
-
             if (currentState.isFinalState()) {
                 goalState = currentState;
                 break;

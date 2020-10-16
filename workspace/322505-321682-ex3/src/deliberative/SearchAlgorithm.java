@@ -8,8 +8,6 @@ import logist.topology.Topology.City;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static java.util.stream.Collectors.groupingBy;
-
 public abstract class SearchAlgorithm {
 
     private Set<Task> availableTaskSet;
@@ -43,6 +41,7 @@ public abstract class SearchAlgorithm {
     private State createGraphAndGetRoot() {
         State rootState = new State(vehicle.getCurrentCity(), carriedTaskSet, availableTaskSet, vehicle);
         hashStateMap.put(rootState.hashCode(), rootState);
+        int count = 1;
 
         List<State> unvisited = new ArrayList<>();
         unvisited.add(rootState);
@@ -51,7 +50,6 @@ public abstract class SearchAlgorithm {
             newCarriedTaskSet = new ArrayList<>(currentState.getCarriedTasks());
             newAvailableTaskSet = new ArrayList<>(currentState.getAvailableTasks());
             vehicle = currentState.getVehicle();
-            int carriedTasksWeight = currentState.getCarriedTasksWeights();
             Set<State> children = new HashSet<>();
 
             // if the state is final just add it as a child and put in map
@@ -86,7 +84,7 @@ public abstract class SearchAlgorithm {
 
                     newCarriedTaskSet = new ArrayList<>(currentState.getCarriedTasks());
                     newAvailableTaskSet = new ArrayList<>(currentState.getAvailableTasks());
-                    carriedTasksWeight = currentState.getCarriedTasksWeights();
+                    int carriedTasksWeight = currentState.getCarriedTasksWeights();
 
                     boolean hasDeliveredTasks = false;
                     List<Task> deliveryTasks = new ArrayList<>();
@@ -106,23 +104,18 @@ public abstract class SearchAlgorithm {
                         children.add(nextState);
                     }
 
-                    // only pick up tasks are left
-                    Map<City, List<Task>> groupedTasks = allTasks.stream()
-                            .collect(groupingBy(task -> task.pickupCity));
-                    for (City pickupCity : groupedTasks.keySet()) {
-                        //creating all possible combinations of picking up in pickupCity
-                        List<List<Task>> subsets = generateSubsets(groupedTasks.get(pickupCity),
-                                vehicle.capacity() - carriedTasksWeight);
-                        //create new state for all possible pickup combinations
-                        for (List<Task> subset : subsets) {
-                            newAvailableTaskSet = new ArrayList<>(currentState.getAvailableTasks());
-                            newAvailableTaskSet.removeAll(subset);
-                            newCarriedTaskSet = new ArrayList<>(newCarriedTaskSet);
-                            newCarriedTaskSet.addAll(subset);
-                            State nextState = new State(nextCity, new HashSet<>(newCarriedTaskSet),
-                                    new HashSet<>(newAvailableTaskSet), vehicle);
-                            children.add(nextState);
-                        }
+                    //creating all possible combinations of picking up in pickupCity
+                    List<List<Task>> subsets = generateSubsets(allTasks,
+                            vehicle.capacity() - carriedTasksWeight);
+                    //create new state for all possible pickup combinations
+                    for (List<Task> subset : subsets) {
+                        List<Task> subsetAvailable = new ArrayList<>(newAvailableTaskSet);
+                        subsetAvailable.removeAll(subset);
+                        List<Task> subsetCarried = new ArrayList<>(newCarriedTaskSet);
+                        subsetCarried.addAll(subset);
+                        State nextState = new State(nextCity, new HashSet<>(subsetCarried),
+                                new HashSet<>(subsetAvailable), vehicle);
+                        children.add(nextState);
                     }
                 }
 
@@ -133,8 +126,12 @@ public abstract class SearchAlgorithm {
                         unvisited.add(state);
                     }
                 }
+                count += children.size();
             }
         }
+
+        System.out.println("BROJ SVE DECE " + count);
+        System.out.println("GRAPF SIZE: " + hashStateMap.size());
 
         return rootState;
     }
@@ -182,9 +179,6 @@ public abstract class SearchAlgorithm {
         }
         optimalPath.add(rootState);
         Collections.reverse(optimalPath);
-
-//        for(State state:optimalPath)
-//            System.out.println(state);
 
         return optimalPath;
     }

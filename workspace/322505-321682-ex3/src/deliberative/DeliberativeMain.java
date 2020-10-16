@@ -37,13 +37,6 @@ public class DeliberativeMain implements DeliberativeBehavior {
 
     @Override
     public Plan plan(Vehicle vehicle, TaskSet taskSet) {
-
-        System.out.println("Starting city:" + vehicle.getCurrentCity());
-        System.out.println("Tasks:");
-        for (Task task : taskSet) {
-            System.out.println(task.id + ": from " + task.pickupCity + " to " + task.deliveryCity);
-        }
-
         SearchAlgorithm algorithm;
         if (algorithmName.equalsIgnoreCase("BFS")) {
             algorithm = new BFS(taskSet, carriedTasks, vehicle);
@@ -52,7 +45,6 @@ public class DeliberativeMain implements DeliberativeBehavior {
         }
 
         Plan plan = algorithm.getPlan();
-
         System.out.println("Search algorithm: " + algorithmName);
         System.out.println("Total distance: " + plan.totalDistance());
         System.out.println("Visited states in graph: " + algorithm.visitedStates);
@@ -63,4 +55,8 @@ public class DeliberativeMain implements DeliberativeBehavior {
     public void planCancelled(TaskSet carriedTasks) {
         this.carriedTasks = carriedTasks;
     }
+
+    // todo: promeniti tag na A-star??? (proveriti tag)
+
+    // todo: dodati computation time
 }
