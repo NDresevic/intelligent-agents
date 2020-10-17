@@ -21,14 +21,7 @@ public class AStar extends SearchAlgorithm {
                  String heuristicName) {
         super(availableTaskSet, carriedTaskSet, vehicle);
 
-        this.Q = new PriorityQueue<>(new Comparator<State>() {
-            @Override
-            public int compare(State s1, State s2) {
-                if (!F.get(s1).equals(F.get(s2)))
-                    return F.get(s1).compareTo(F.get(s2));
-                return s1.getId().compareTo(s2.getId());
-            }
-        });
+        this.Q = new PriorityQueue<>(Comparator.comparingDouble(this::calculateF));
         this.C = new HashSet<>();
         this.H = new HashMap<>();
         this.F = new HashMap<>();
@@ -42,27 +35,23 @@ public class AStar extends SearchAlgorithm {
     @Override
     public State getGoalState() {
         calculateHeuristic();
-        System.err.println(H.size());
         G.put(rootState, 0d);
         F.put(rootState, calculateF(rootState));
         Q.add(rootState);
 
         State currentState;
-        State goalState = null;
-
-        //while there are unprocessed states
+        // while there are unprocessed states
         while (!Q.isEmpty()) {
             visitedStates++;
-            currentState = Q.remove();
+            currentState = Q.poll();
+            C.add(currentState);
 
             if (currentState.isFinalState()) {
-                goalState = currentState;
-                break;
+                return currentState;
             }
 
-            //process children
-            Set<State> children = currentState.getChildren();
-            for (State child : children) {
+            // process children
+            for (State child : currentState.getChildren()) {
                 double pathOverCurrentState = G.get(currentState) +
                         currentState.getCurrentCity().distanceTo(child.getCurrentCity());
                 if (!Q.contains(child) && !C.contains(child)) {
@@ -70,25 +59,20 @@ public class AStar extends SearchAlgorithm {
                     F.put(child, calculateF(child));
                     Q.add(child);
                     parentOptimal.put(child, currentState);
-                } else {
-                    //another new path to child
-                    //path to child over current state is better than the previous optimal path to child
-                    if (pathOverCurrentState < G.get(child)) {
-                        if(Q.contains(child))
-                            Q.remove(child);
-                        G.put(child, pathOverCurrentState);
-                        F.put(child, calculateF(child));
-                        parentOptimal.put(child, currentState);
-                        if (C.contains(child)) {
-                            C.remove(child);
-                        }
-                        Q.add(child);
-                    }
+                } // another new path to child
+                // path to child over current state is better than the previous optimal path to child
+                else if (pathOverCurrentState < G.get(child)) {
+                    // not removing because of the time complexity
+//                    Q.remove(child);
+                    G.put(child, pathOverCurrentState);
+                    F.put(child, calculateF(child));
+                    Q.add(child);
+                    parentOptimal.put(child, currentState);
                 }
             }
-            C.add(currentState);
         }
-        return goalState;
+
+        return null;
     }
 
     private void calculateHeuristic() {
@@ -115,7 +99,7 @@ public class AStar extends SearchAlgorithm {
                 h2 = possibleShorterPath;
             }
         }
-        double h = h1 > h2 ? h1 : h2;
+        double h = Math.max(h1, h2);
         H.put(currentState, h * vehicle.costPerKm());
 
         for (State child : currentState.getChildren()) {

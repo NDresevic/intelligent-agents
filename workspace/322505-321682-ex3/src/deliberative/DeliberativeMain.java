@@ -9,6 +9,7 @@ import logist.task.TaskDistribution;
 import logist.task.TaskSet;
 import logist.topology.Topology;
 
+import java.security.Timestamp;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -25,10 +26,10 @@ public class DeliberativeMain implements DeliberativeBehavior {
         this.agent = agent;
 
         this.algorithmName = agent.readProperty("algorithm", String.class, "BFS");
-        if (!algorithmName.equalsIgnoreCase("BFS") && !algorithmName.equalsIgnoreCase("ASTAR"))
+        if (!algorithmName.equalsIgnoreCase("BFS") && !algorithmName.equalsIgnoreCase("A-star"))
             throw new AssertionError("Unsupported algorithm.");
 
-        if (this.algorithmName.equalsIgnoreCase("ASTAR")) {
+        if (this.algorithmName.equalsIgnoreCase("A-star")) {
             this.heuristicName = agent.readProperty("heuristic", String.class, "");
         } else {
             this.heuristicName = null;
@@ -38,6 +39,8 @@ public class DeliberativeMain implements DeliberativeBehavior {
     @Override
     public Plan plan(Vehicle vehicle, TaskSet taskSet) {
         SearchAlgorithm algorithm;
+
+        long startTime = System.currentTimeMillis();
         if (algorithmName.equalsIgnoreCase("BFS")) {
             algorithm = new BFS(taskSet, carriedTasks, vehicle);
         } else {
@@ -47,7 +50,10 @@ public class DeliberativeMain implements DeliberativeBehavior {
         Plan plan = algorithm.getPlan();
         System.out.println("Search algorithm: " + algorithmName);
         System.out.println("Total distance: " + plan.totalDistance());
-        System.out.println("Visited states in graph: " + algorithm.visitedStates);
+        System.out.println("Number of visited states in graph: " + algorithm.visitedStates);
+        long endTime = System.currentTimeMillis();
+        System.out.println("Execution time: " + (endTime - startTime) + "ms");
+
         return plan;
     }
 
@@ -55,8 +61,6 @@ public class DeliberativeMain implements DeliberativeBehavior {
     public void planCancelled(TaskSet carriedTasks) {
         this.carriedTasks = carriedTasks;
     }
-
-    // todo: promeniti tag na A-star??? (proveriti tag)
 
     // todo: dodati computation time
 }

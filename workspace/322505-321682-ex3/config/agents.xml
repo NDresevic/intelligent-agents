@@ -17,17 +17,23 @@
 <!--		<set heuristic="minCarriedPlusMinAvailable"/>-->
 	</agent>
 
+	<agent name="deliberative-bfs">
+		<set class-path="bin/"/>
+		<set class-name="deliberative.DeliberativeMain"/>
+		<set algorithm="BFS"/>
+	</agent>
+
 	<agent name="deliberative-astar">
 		<set class-path="bin/"/>
 		<set class-name="deliberative.DeliberativeMain"/>
-		<set algorithm="ASTAR"/>
+		<set algorithm="A-star"/>
 		<set heuristic="minCarriedPlusMinAvailable"/>
 	</agent>
 
 	<agent name="deliberative-astar-zero">
 		<set class-path="bin/"/>
 		<set class-name="deliberative.DeliberativeMain"/>
-		<set algorithm="ASTAR"/>
+		<set algorithm="A-star"/>
 		<set heuristic="zeroHeuristic"/>
 	</agent>
 	

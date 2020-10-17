@@ -39,11 +39,10 @@ public abstract class SearchAlgorithm {
     }
 
     private State createGraphAndGetRoot() {
+        System.out.println("Computing graph...");
+
         State rootState = new State(vehicle.getCurrentCity(), carriedTaskSet, availableTaskSet, vehicle);
-        int ID = 0;
-        boolean seenFinalState = false;
         hashStateMap.put(rootState.hashCode(), rootState);
-        rootState.setId(++ID);
         int count = 1;
 
         List<State> unvisited = new ArrayList<>();
@@ -60,10 +59,6 @@ public abstract class SearchAlgorithm {
                 State finalState = new State(currentState.getCurrentCity(), new HashSet<>(), new HashSet<>(), vehicle);
                 children.add(finalState);
                 hashStateMap.putIfAbsent(finalState.hashCode(), finalState);
-                if(!seenFinalState){
-                    finalState.setId(++ID);
-                    seenFinalState = true;
-                }
             } else {
 
                 // collect all the next cities it makes sense to go to and their tasks
@@ -126,24 +121,20 @@ public abstract class SearchAlgorithm {
                     }
                 }
 
-                //currentState.setChildren(children);
                 for (State child : children) {
                     if (!hashStateMap.containsKey(child.hashCode())) {
                         hashStateMap.put(child.hashCode(), child);
-                        child.setId(++ID);
                         unvisited.add(child);
                         currentState.appendChild(child);
-                    }
-                    else
+                    } else {
                         currentState.appendChild(hashStateMap.get(child.hashCode()));
+                    }
                 }
                 count += children.size();
             }
         }
 
-        System.out.println("BROJ SVE DECE " + count);
-        System.out.println("GRAPF SIZE: " + hashStateMap.size());
-        System.out.println("ID: " + ID);
+        System.out.println("Number of states: " + hashStateMap.size());
         return rootState;
     }
 

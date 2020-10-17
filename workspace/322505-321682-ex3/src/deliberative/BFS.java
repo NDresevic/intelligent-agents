@@ -2,6 +2,7 @@ package deliberative;
 
 import logist.simulation.Vehicle;
 import logist.task.Task;
+
 import java.util.*;
 
 public class BFS extends SearchAlgorithm {
@@ -43,8 +44,6 @@ public class BFS extends SearchAlgorithm {
                 }
             }
         }
-
-        System.out.println("COUNT VISITED: " + visited.size());
 
         return goalState;
     }
