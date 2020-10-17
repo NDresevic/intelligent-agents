@@ -23,6 +23,8 @@ public abstract class SearchAlgorithm {
     protected final Map<State, State> parentOptimal;
     protected int visitedStates;
 
+    static int ID = 0;
+
     public SearchAlgorithm(Set<Task> availableTaskSet, Set<Task> carriedTaskSet, Vehicle vehicle) {
         this.availableTaskSet = availableTaskSet;
         this.carriedTaskSet = carriedTaskSet;
@@ -40,11 +42,7 @@ public abstract class SearchAlgorithm {
 
     private State createGraphAndGetRoot() {
         State rootState = new State(vehicle.getCurrentCity(), carriedTaskSet, availableTaskSet, vehicle);
-        int ID = 0;
-        boolean seenFinalState = false;
-        hashStateMap.put(rootState.hashCode(), rootState);
-        rootState.setId(++ID);
-        rootState.calculateHeuristic();
+        addNewState(rootState);
         int count = 1;
 
         List<State> unvisited = new ArrayList<>();
@@ -60,11 +58,8 @@ public abstract class SearchAlgorithm {
             if (newCarriedTaskSet.isEmpty() && newAvailableTaskSet.isEmpty()) {
                 State finalState = new State(currentState.getCurrentCity(), new HashSet<>(), new HashSet<>(), vehicle);
                 children.add(finalState);
-                hashStateMap.putIfAbsent(finalState.hashCode(), finalState);
-                if(!seenFinalState){
-                    finalState.setId(++ID);
-                    finalState.calculateHeuristic();
-                    seenFinalState = true;
+                if(!hashStateMap.containsKey(finalState.hashCode())){
+                    addNewState(finalState);
                 }
             } else {
 
@@ -131,9 +126,7 @@ public abstract class SearchAlgorithm {
                 //currentState.setChildren(children);
                 for (State child : children) {
                     if (!hashStateMap.containsKey(child.hashCode())) {
-                        hashStateMap.put(child.hashCode(), child);
-                        child.setId(++ID);
-                        child.calculateHeuristic();
+                        addNewState(child);
                         unvisited.add(child);
                         currentState.appendChild(child);
                     }
@@ -148,6 +141,12 @@ public abstract class SearchAlgorithm {
         System.out.println("GRAPF SIZE: " + hashStateMap.size());
         System.out.println("ID: " + ID);
         return rootState;
+    }
+
+    private void addNewState(State state){
+        hashStateMap.put(state.hashCode(), state);
+        state.setId(++ID);
+        state.calculateHeuristic();
     }
 
     private List<List<Task>> generateSubsets(List<Task> tasks, int freeCapacity) {
