@@ -14,26 +14,35 @@ public class AStar extends SearchAlgorithm {
     private final PriorityQueue<State> Q;
     private final Set<State> C;
     private final Map<State, Double> H;
+    private final Map<State, Double> F;
     private final String heuristicName;
 
     public AStar(Set<Task> availableTaskSet, Set<Task> carriedTaskSet, Vehicle vehicle,
                  String heuristicName) {
         super(availableTaskSet, carriedTaskSet, vehicle);
 
-        this.Q = new PriorityQueue<>(Comparator.comparingDouble(this::calculateF));
+        this.Q = new PriorityQueue<>(new Comparator<State>() {
+            @Override
+            public int compare(State s1, State s2) {
+                return F.get(s1).compareTo(F.get(s2));
+            }
+        });
         this.C = new HashSet<>();
         this.H = new HashMap<>();
+        this.F = new HashMap<>();
         this.heuristicName = heuristicName;
     }
 
-    private double calculateF(State state) {
+    private Double calculateF(State state) {
         return G.get(state) + H.get(state);
     }
 
     @Override
     public State getGoalState() {
         calculateHeuristic();
+        System.err.println(H.size());
         G.put(rootState, 0d);
+        F.put(rootState, calculateF(rootState));
         Q.add(rootState);
 
         State currentState;
@@ -56,18 +65,22 @@ public class AStar extends SearchAlgorithm {
                         currentState.getCurrentCity().distanceTo(child.getCurrentCity());
                 if (!Q.contains(child) && !C.contains(child)) {
                     G.put(child, pathOverCurrentState);
+                    F.put(child, calculateF(child));
                     Q.add(child);
                     parentOptimal.put(child, currentState);
                 } else {
                     //another new path to child
                     //path to child over current state is better than the previous optimal path to child
                     if (pathOverCurrentState < G.get(child)) {
+                        if(Q.contains(child))
+                            Q.remove(child);
                         G.put(child, pathOverCurrentState);
+                        F.put(child, calculateF(child));
                         parentOptimal.put(child, currentState);
                         if (C.contains(child)) {
                             C.remove(child);
-                            Q.add(child);
                         }
+                        Q.add(child);
                     }
                 }
             }
@@ -86,24 +99,21 @@ public class AStar extends SearchAlgorithm {
     }
 
     private void minCarriedPlusMinAvailable(State currentState) {
-        double h = 0d;
-        double curr = currentState.getCarriedTasks().isEmpty() ? 0d : Double.MAX_VALUE;
+        double h1 = currentState.getCarriedTasks().isEmpty() ? 0d : Double.MAX_VALUE;
         for (Task task : currentState.getCarriedTasks()) {
-            if (currentState.getCurrentCity().distanceTo(task.deliveryCity) < curr) {
-                curr = currentState.getCurrentCity().distanceTo(task.deliveryCity);
+            if (currentState.getCurrentCity().distanceTo(task.deliveryCity) < h1) {
+                h1 = currentState.getCurrentCity().distanceTo(task.deliveryCity);
             }
         }
-
-        h += curr;
-        curr = currentState.getAvailableTasks().isEmpty() ? 0d : Double.MAX_VALUE;
+        double h2 = currentState.getAvailableTasks().isEmpty() ? 0d : Double.MAX_VALUE;
         for (Task task : currentState.getAvailableTasks()) {
             double possibleShorterPath = currentState.getCurrentCity().distanceTo(task.pickupCity) +
                     task.pickupCity.distanceTo(task.deliveryCity);
-            if (possibleShorterPath < curr) {
-                curr = possibleShorterPath;
+            if (possibleShorterPath < h2) {
+                h2 = possibleShorterPath;
             }
         }
-        h += curr;
+        double h = h1 > h2 ? h1 : h2;
         H.put(currentState, h * vehicle.costPerKm());
 
         for (State child : currentState.getChildren()) {
