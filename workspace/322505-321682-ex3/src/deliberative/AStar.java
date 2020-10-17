@@ -15,7 +15,6 @@ public class AStar extends SearchAlgorithm {
     private final Set<State> C;
     private final Map<State, Double> H;
     private final Map<State, Double> F;
-    private final String heuristicName;
 
     public AStar(Set<Task> availableTaskSet, Set<Task> carriedTaskSet, Vehicle vehicle,
                  String heuristicName) {
@@ -25,11 +24,10 @@ public class AStar extends SearchAlgorithm {
         this.C = new HashSet<>();
         this.H = new HashMap<>();
         this.F = new HashMap<>();
-        this.heuristicName = heuristicName;
     }
 
     private Double calculateF(State state) {
-        return G.get(state) + H.get(state);
+        return G.get(state) + state.getH();
     }
 
     @Override
@@ -75,43 +73,6 @@ public class AStar extends SearchAlgorithm {
         return null;
     }
 
-    private void calculateHeuristic() {
-        try {
-            Method method = this.getClass().getDeclaredMethod(heuristicName, rootState.getClass());
-            method.invoke(this, rootState);
-        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-            e.printStackTrace();
-        }
-    }
 
-    private void minCarriedPlusMinAvailable(State currentState) {
-        double h1 = currentState.getCarriedTasks().isEmpty() ? 0d : Double.MAX_VALUE;
-        for (Task task : currentState.getCarriedTasks()) {
-            if (currentState.getCurrentCity().distanceTo(task.deliveryCity) < h1) {
-                h1 = currentState.getCurrentCity().distanceTo(task.deliveryCity);
-            }
-        }
-        double h2 = currentState.getAvailableTasks().isEmpty() ? 0d : Double.MAX_VALUE;
-        for (Task task : currentState.getAvailableTasks()) {
-            double possibleShorterPath = currentState.getCurrentCity().distanceTo(task.pickupCity) +
-                    task.pickupCity.distanceTo(task.deliveryCity);
-            if (possibleShorterPath < h2) {
-                h2 = possibleShorterPath;
-            }
-        }
-        double h = Math.max(h1, h2);
-        H.put(currentState, h * vehicle.costPerKm());
 
-        for (State child : currentState.getChildren()) {
-            minCarriedPlusMinAvailable(child);
-        }
-    }
-
-    private void zeroHeuristic(State currentState) {
-        H.put(currentState, 0d);
-
-        for (State child : currentState.getChildren()) {
-            zeroHeuristic(child);
-        }
-    }
 }

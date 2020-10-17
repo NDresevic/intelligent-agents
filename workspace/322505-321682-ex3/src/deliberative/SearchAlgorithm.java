@@ -42,6 +42,7 @@ public abstract class SearchAlgorithm {
         System.out.println("Computing graph...");
 
         State rootState = new State(vehicle.getCurrentCity(), carriedTaskSet, availableTaskSet, vehicle);
+        addNewState(rootState);
         hashStateMap.put(rootState.hashCode(), rootState);
         int count = 1;
 
@@ -58,7 +59,9 @@ public abstract class SearchAlgorithm {
             if (newCarriedTaskSet.isEmpty() && newAvailableTaskSet.isEmpty()) {
                 State finalState = new State(currentState.getCurrentCity(), new HashSet<>(), new HashSet<>(), vehicle);
                 children.add(finalState);
-                hashStateMap.putIfAbsent(finalState.hashCode(), finalState);
+                if(!hashStateMap.containsKey(finalState.hashCode())){
+                    addNewState(finalState);
+                }
             } else {
 
                 // collect all the next cities it makes sense to go to and their tasks
@@ -124,6 +127,7 @@ public abstract class SearchAlgorithm {
                 for (State child : children) {
                     if (!hashStateMap.containsKey(child.hashCode())) {
                         hashStateMap.put(child.hashCode(), child);
+                        child.setId(++ID);
                         unvisited.add(child);
                         currentState.appendChild(child);
                     } else {
@@ -136,6 +140,12 @@ public abstract class SearchAlgorithm {
 
         System.out.println("Number of states: " + hashStateMap.size());
         return rootState;
+    }
+
+    private void addNewState(State state){
+        hashStateMap.put(state.hashCode(), state);
+        state.setId(++ID);
+        state.calculateHeuristic();
     }
 
     private List<List<Task>> generateSubsets(List<Task> tasks, int freeCapacity) {
