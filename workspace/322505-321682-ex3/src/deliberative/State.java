@@ -15,6 +15,7 @@ public class State {
     private Set<Task> availableTasks;
     private int carriedTasksWeights = 0;
     private Integer id;
+    private double h;
 
     private Vehicle vehicle;
     private Set<State> children;
@@ -69,6 +70,8 @@ public class State {
 
     public void appendChild(State child){ children.add(child); }
 
+    public Double getH() { return h; }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -94,5 +97,23 @@ public class State {
                 //", vehicle=" + vehicle +
                 //", children=" + children +
                 '}';
+    }
+
+    public void calculateHeuristic() {
+        double h1 = carriedTasks.isEmpty() ? 0d : Double.MIN_VALUE;
+        for (Task task : carriedTasks) {
+            if (currentCity.distanceTo(task.deliveryCity) > h1) {
+                h1 = currentCity.distanceTo(task.deliveryCity);
+            }
+        }
+        double h2 = availableTasks.isEmpty() ? 0d : Double.MIN_VALUE;
+        for (Task task : availableTasks) {
+            double possibleShorterPath = currentCity.distanceTo(task.pickupCity) +
+                    task.pickupCity.distanceTo(task.deliveryCity);
+            if (possibleShorterPath > h2) {
+                h2 = possibleShorterPath;
+            }
+        }
+        h = h1 > h2 ? h1 : h2;
     }
 }

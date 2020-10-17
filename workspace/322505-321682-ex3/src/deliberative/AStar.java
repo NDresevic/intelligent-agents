@@ -36,13 +36,13 @@ public class AStar extends SearchAlgorithm {
     }
 
     private Double calculateF(State state) {
-        return G.get(state) + H.get(state);
+        return G.get(state) + state.getH();
     }
 
     @Override
     public State getGoalState() {
-        calculateHeuristic();
-        System.err.println(H.size());
+        //calculateHeuristic();
+        System.err.println("IZRACUNAO SAM HEURISTIKU");
         G.put(rootState, 0d);
         F.put(rootState, calculateF(rootState));
         Q.add(rootState);
@@ -101,17 +101,17 @@ public class AStar extends SearchAlgorithm {
     }
 
     private void minCarriedPlusMinAvailable(State currentState) {
-        double h1 = currentState.getCarriedTasks().isEmpty() ? 0d : Double.MAX_VALUE;
+        double h1 = currentState.getCarriedTasks().isEmpty() ? 0d : Double.MIN_VALUE;
         for (Task task : currentState.getCarriedTasks()) {
-            if (currentState.getCurrentCity().distanceTo(task.deliveryCity) < h1) {
+            if (currentState.getCurrentCity().distanceTo(task.deliveryCity) > h1) {
                 h1 = currentState.getCurrentCity().distanceTo(task.deliveryCity);
             }
         }
-        double h2 = currentState.getAvailableTasks().isEmpty() ? 0d : Double.MAX_VALUE;
+        double h2 = currentState.getAvailableTasks().isEmpty() ? 0d : Double.MIN_VALUE;
         for (Task task : currentState.getAvailableTasks()) {
             double possibleShorterPath = currentState.getCurrentCity().distanceTo(task.pickupCity) +
                     task.pickupCity.distanceTo(task.deliveryCity);
-            if (possibleShorterPath < h2) {
+            if (possibleShorterPath > h2) {
                 h2 = possibleShorterPath;
             }
         }

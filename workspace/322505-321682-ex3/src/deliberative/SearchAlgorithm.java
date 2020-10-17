@@ -44,6 +44,7 @@ public abstract class SearchAlgorithm {
         boolean seenFinalState = false;
         hashStateMap.put(rootState.hashCode(), rootState);
         rootState.setId(++ID);
+        rootState.calculateHeuristic();
         int count = 1;
 
         List<State> unvisited = new ArrayList<>();
@@ -62,6 +63,7 @@ public abstract class SearchAlgorithm {
                 hashStateMap.putIfAbsent(finalState.hashCode(), finalState);
                 if(!seenFinalState){
                     finalState.setId(++ID);
+                    finalState.calculateHeuristic();
                     seenFinalState = true;
                 }
             } else {
@@ -131,6 +133,7 @@ public abstract class SearchAlgorithm {
                     if (!hashStateMap.containsKey(child.hashCode())) {
                         hashStateMap.put(child.hashCode(), child);
                         child.setId(++ID);
+                        child.calculateHeuristic();
                         unvisited.add(child);
                         currentState.appendChild(child);
                     }
