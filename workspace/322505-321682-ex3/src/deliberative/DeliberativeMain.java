@@ -9,7 +9,6 @@ import logist.task.TaskDistribution;
 import logist.task.TaskSet;
 import logist.topology.Topology;
 
-import java.security.Timestamp;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -44,7 +43,7 @@ public class DeliberativeMain implements DeliberativeBehavior {
         if (algorithmName.equalsIgnoreCase("BFS")) {
             algorithm = new BFS(taskSet, carriedTasks, vehicle);
         } else {
-            algorithm = new AStar(taskSet, carriedTasks, vehicle, heuristicName);
+            algorithm = new AStar(taskSet, carriedTasks, vehicle);
         }
 
         Plan plan = algorithm.getPlan();
@@ -61,6 +60,4 @@ public class DeliberativeMain implements DeliberativeBehavior {
     public void planCancelled(TaskSet carriedTasks) {
         this.carriedTasks = carriedTasks;
     }
-
-    // todo: dodati computation time
 }

@@ -3,8 +3,6 @@ package deliberative;
 import logist.simulation.Vehicle;
 import logist.task.Task;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.*;
 
 import java.util.Set;
@@ -13,16 +11,13 @@ public class AStar extends SearchAlgorithm {
 
     private final PriorityQueue<State> Q;
     private final Set<State> C;
-    private final Map<State, Double> H;
     private final Map<State, Double> F;
 
-    public AStar(Set<Task> availableTaskSet, Set<Task> carriedTaskSet, Vehicle vehicle,
-                 String heuristicName) {
+    public AStar(Set<Task> availableTaskSet, Set<Task> carriedTaskSet, Vehicle vehicle) {
         super(availableTaskSet, carriedTaskSet, vehicle);
 
         this.Q = new PriorityQueue<>(Comparator.comparingDouble(this::calculateF));
         this.C = new HashSet<>();
-        this.H = new HashMap<>();
         this.F = new HashMap<>();
     }
 
@@ -32,7 +27,6 @@ public class AStar extends SearchAlgorithm {
 
     @Override
     public State getGoalState() {
-        calculateHeuristic();
         G.put(rootState, 0d);
         F.put(rootState, calculateF(rootState));
         Q.add(rootState);
@@ -72,7 +66,4 @@ public class AStar extends SearchAlgorithm {
 
         return null;
     }
-
-
-
 }

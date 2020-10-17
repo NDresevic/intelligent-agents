@@ -14,7 +14,6 @@ public class State {
     private Set<Task> carriedTasks;
     private Set<Task> availableTasks;
     private int carriedTasksWeights = 0;
-    private Integer id;
     private double h;
 
     private Vehicle vehicle;
@@ -63,7 +62,9 @@ public class State {
         children.add(child);
     }
 
-    public Double getH() { return h; }
+    public Double getH() {
+        return h;
+    }
 
     @Override
     public boolean equals(Object o) {
@@ -105,6 +106,6 @@ public class State {
                 h2 = possibleShorterPath;
             }
         }
-        h = h1 > h2 ? h1 : h2;
+        h = Math.max(h1, h2);
     }
 }

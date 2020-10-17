@@ -43,8 +43,6 @@ public abstract class SearchAlgorithm {
 
         State rootState = new State(vehicle.getCurrentCity(), carriedTaskSet, availableTaskSet, vehicle);
         addNewState(rootState);
-        hashStateMap.put(rootState.hashCode(), rootState);
-        int count = 1;
 
         List<State> unvisited = new ArrayList<>();
         unvisited.add(rootState);
@@ -59,7 +57,7 @@ public abstract class SearchAlgorithm {
             if (newCarriedTaskSet.isEmpty() && newAvailableTaskSet.isEmpty()) {
                 State finalState = new State(currentState.getCurrentCity(), new HashSet<>(), new HashSet<>(), vehicle);
                 children.add(finalState);
-                if(!hashStateMap.containsKey(finalState.hashCode())){
+                if (!hashStateMap.containsKey(finalState.hashCode())) {
                     addNewState(finalState);
                 }
             } else {
@@ -126,15 +124,13 @@ public abstract class SearchAlgorithm {
 
                 for (State child : children) {
                     if (!hashStateMap.containsKey(child.hashCode())) {
-                        hashStateMap.put(child.hashCode(), child);
-                        child.setId(++ID);
+                        addNewState(child);
                         unvisited.add(child);
                         currentState.appendChild(child);
                     } else {
                         currentState.appendChild(hashStateMap.get(child.hashCode()));
                     }
                 }
-                count += children.size();
             }
         }
 
@@ -142,9 +138,8 @@ public abstract class SearchAlgorithm {
         return rootState;
     }
 
-    private void addNewState(State state){
+    private void addNewState(State state) {
         hashStateMap.put(state.hashCode(), state);
-        state.setId(++ID);
         state.calculateHeuristic();
     }
 
