@@ -24,7 +24,9 @@ public class AStar extends SearchAlgorithm {
         this.Q = new PriorityQueue<>(new Comparator<State>() {
             @Override
             public int compare(State s1, State s2) {
-                return F.get(s1).compareTo(F.get(s2));
+                if (!F.get(s1).equals(F.get(s2)))
+                    return F.get(s1).compareTo(F.get(s2));
+                return s1.getId().compareTo(s2.getId());
             }
         });
         this.C = new HashSet<>();

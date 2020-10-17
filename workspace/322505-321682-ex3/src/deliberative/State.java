@@ -14,6 +14,7 @@ public class State {
     private Set<Task> carriedTasks;
     private Set<Task> availableTasks;
     private int carriedTasksWeights = 0;
+    private Integer id;
 
     private Vehicle vehicle;
     private Set<State> children;
@@ -27,6 +28,7 @@ public class State {
         }
         this.vehicle = vehicle;
         this.children = new HashSet<>();
+        this.id = null;
     }
 
     public boolean isFinalState() {
@@ -60,6 +62,12 @@ public class State {
     public Vehicle getVehicle() {
         return vehicle;
     }
+
+    public Integer getId() { return id; }
+
+    public void setId(int id) { this.id = id; }
+
+    public void appendChild(State child){ children.add(child); }
 
     @Override
     public boolean equals(Object o) {
