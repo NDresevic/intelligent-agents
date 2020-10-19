@@ -22,6 +22,7 @@ public abstract class SearchAlgorithm {
     protected final Map<State, Double> G;
     protected final Map<State, State> parentOptimal;
     protected int visitedStates;
+    private Double planCost;
 
     public SearchAlgorithm(Set<Task> availableTaskSet, Set<Task> carriedTaskSet, Vehicle vehicle) {
         this.availableTaskSet = availableTaskSet;
@@ -35,6 +36,7 @@ public abstract class SearchAlgorithm {
         this.G = new HashMap<>();
         this.parentOptimal = new HashMap<>();
         this.visitedStates = 0;
+        this.planCost = null;
         this.rootState = createGraphAndGetRoot();
     }
 
@@ -229,6 +231,10 @@ public abstract class SearchAlgorithm {
             previousState = currentState;
         }
 
+        this.planCost = plan.totalDistance() * vehicle.costPerKm();
         return plan;
     }
+
+    public double getPlanCost() { return planCost; }
+
 }

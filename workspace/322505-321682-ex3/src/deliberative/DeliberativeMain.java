@@ -17,7 +17,7 @@ public class DeliberativeMain implements DeliberativeBehavior {
     private Agent agent;
     private Set<Task> carriedTasks;
     private String algorithmName;
-    private String heuristicName;
+    private SearchAlgorithm algorithm;
 
     @Override
     public void setup(Topology topology, TaskDistribution taskDistribution, Agent agent) {
@@ -27,18 +27,10 @@ public class DeliberativeMain implements DeliberativeBehavior {
         this.algorithmName = agent.readProperty("algorithm", String.class, "BFS");
         if (!algorithmName.equalsIgnoreCase("BFS") && !algorithmName.equalsIgnoreCase("A-star"))
             throw new AssertionError("Unsupported algorithm.");
-
-        if (this.algorithmName.equalsIgnoreCase("A-star")) {
-            this.heuristicName = agent.readProperty("heuristic", String.class, "");
-        } else {
-            this.heuristicName = null;
-        }
     }
 
     @Override
     public Plan plan(Vehicle vehicle, TaskSet taskSet) {
-        SearchAlgorithm algorithm;
-
         long startTime = System.currentTimeMillis();
         if (algorithmName.equalsIgnoreCase("BFS")) {
             algorithm = new BFS(taskSet, carriedTasks, vehicle);
@@ -47,9 +39,11 @@ public class DeliberativeMain implements DeliberativeBehavior {
         }
 
         Plan plan = algorithm.getPlan();
+        System.out.println("\nAgent " + agent.id() + ":");
         System.out.println("Search algorithm: " + algorithmName);
-        System.out.println("Total distance: " + plan.totalDistance());
-        System.out.println("Number of visited states in graph: " + algorithm.visitedStates);
+        System.out.println("Total cost (until now + planned): " + (vehicle.getDistance()* vehicle.costPerKm()  + algorithm.getPlanCost()));
+        System.out.println("New plan total distance: " + plan.totalDistance());
+        System.out.println("Visited states for the last planning: " + algorithm.visitedStates);
         long endTime = System.currentTimeMillis();
         System.out.println("Total execution time: " + (endTime - startTime) + "ms");
 
