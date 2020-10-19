@@ -19,14 +19,11 @@ public class BFS extends SearchAlgorithm {
         State goalState = null;
         double minimumCost = Double.MAX_VALUE;
 
-        queue.add(rootState);
         visited.add(rootState);
+        queue.add(rootState);
         G.put(rootState, 0d);
         while (!queue.isEmpty()) {
-            visitedStates++;
             State currentState = queue.poll();
-            visited.add(currentState);
-
             if (currentState.isFinalState() && G.get(currentState) < minimumCost) {
                 minimumCost = G.get(currentState);
                 goalState = currentState;
@@ -41,11 +38,13 @@ public class BFS extends SearchAlgorithm {
                 }
 
                 if (!visited.contains(child)) {
+                    visited.add(child);
                     queue.add(child);
                 }
             }
         }
 
+        visitedStates = visited.size();
         long endTime = System.currentTimeMillis();
         System.out.println("BFS traversal time: " + (endTime - startTime) + "ms");
         return goalState;

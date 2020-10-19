@@ -32,6 +32,7 @@ public class AStar extends SearchAlgorithm {
         G.put(rootState, 0d);
         Q.add(rootState);
         Qin.add(rootState);
+        visitedStates = 0;
 
         State currentState;
         // while there are unprocessed states
