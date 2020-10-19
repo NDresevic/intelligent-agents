@@ -39,7 +39,7 @@ public abstract class SearchAlgorithm {
     }
 
     private State createGraphAndGetRoot() {
-        System.out.println("Computing graph...");
+        long startTime = System.currentTimeMillis();
 
         State rootState = new State(vehicle.getCurrentCity(), carriedTaskSet, availableTaskSet, vehicle);
         addNewState(rootState);
@@ -134,6 +134,8 @@ public abstract class SearchAlgorithm {
             }
         }
 
+        long endTime = System.currentTimeMillis();
+        System.out.println("Graph calculation time: " + (endTime - startTime) + "ms");
         System.out.println("Number of states: " + hashStateMap.size());
         return rootState;
     }

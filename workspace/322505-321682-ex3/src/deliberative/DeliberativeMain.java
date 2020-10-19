@@ -51,7 +51,7 @@ public class DeliberativeMain implements DeliberativeBehavior {
         System.out.println("Total distance: " + plan.totalDistance());
         System.out.println("Number of visited states in graph: " + algorithm.visitedStates);
         long endTime = System.currentTimeMillis();
-        System.out.println("Execution time: " + (endTime - startTime) + "ms");
+        System.out.println("Total execution time: " + (endTime - startTime) + "ms");
 
         return plan;
     }

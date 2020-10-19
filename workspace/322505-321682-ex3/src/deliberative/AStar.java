@@ -28,7 +28,7 @@ public class AStar extends SearchAlgorithm {
 
     @Override
     public State getGoalState() {
-        System.err.println("get goal state start");
+        long startTime = System.currentTimeMillis();
         G.put(rootState, 0d);
         Q.add(rootState);
         Qin.add(rootState);
@@ -38,13 +38,11 @@ public class AStar extends SearchAlgorithm {
         while (!Q.isEmpty()) {
             visitedStates++;
             currentState = Q.poll();
+            C.add(currentState);
 
             if (currentState.isFinalState()) {
-                System.err.println("get goal state finish");
                 return currentState;
             }
-
-            C.add(currentState);
 
             // process children
             for (State child : currentState.getChildren()) {
@@ -61,14 +59,13 @@ public class AStar extends SearchAlgorithm {
                     Q.remove(child);
                     G.put(child, pathOverCurrentState);
                     parentOptimal.put(child, currentState);
-//                    if(C.contains(child)){
-//                        C.remove(child);
-//                    }
                     Q.add(child);
                 }
             }
         }
 
+        long endTime = System.currentTimeMillis();
+        System.out.println("A-star traversal time: " + (endTime - startTime) + "ms");
         return null;
     }
 }

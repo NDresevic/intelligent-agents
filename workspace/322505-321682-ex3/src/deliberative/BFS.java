@@ -13,6 +13,7 @@ public class BFS extends SearchAlgorithm {
 
     @Override
     public State getGoalState() {
+        long startTime = System.currentTimeMillis();
         Set<State> visited = new LinkedHashSet<>();
         Queue<State> queue = new LinkedList<>();
         State goalState = null;
@@ -45,6 +46,8 @@ public class BFS extends SearchAlgorithm {
             }
         }
 
+        long endTime = System.currentTimeMillis();
+        System.out.println("BFS traversal time: " + (endTime - startTime) + "ms");
         return goalState;
     }
 }
