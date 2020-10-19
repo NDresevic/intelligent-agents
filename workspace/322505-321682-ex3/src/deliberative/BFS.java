@@ -17,7 +17,7 @@ public class BFS extends SearchAlgorithm {
         Set<State> visited = new LinkedHashSet<>();
         Queue<State> queue = new LinkedList<>();
         State goalState = null;
-        double costFromRoot = Double.MAX_VALUE;
+        double minimumCost = Double.MAX_VALUE;
 
         queue.add(rootState);
         visited.add(rootState);
@@ -25,22 +25,22 @@ public class BFS extends SearchAlgorithm {
         while (!queue.isEmpty()) {
             visitedStates++;
             State currentState = queue.poll();
-            if (currentState.isFinalState() && G.get(currentState) < costFromRoot) {
-                costFromRoot = G.get(currentState);
+            visited.add(currentState);
+
+            if (currentState.isFinalState() && G.get(currentState) < minimumCost) {
+                minimumCost = G.get(currentState);
                 goalState = currentState;
             }
 
             for (State child : currentState.getChildren()) {
-                G.putIfAbsent(child, Double.MAX_VALUE);
                 double pathOverCurrentState = G.get(currentState) +
                         currentState.getCurrentCity().distanceTo(child.getCurrentCity());
-                if (pathOverCurrentState < G.get(child)) {
+                if (!G.containsKey(child) || pathOverCurrentState < G.get(child)) {
                     G.put(child, pathOverCurrentState);
                     parentOptimal.put(child, currentState);
                 }
 
                 if (!visited.contains(child)) {
-                    visited.add(child);
                     queue.add(child);
                 }
             }
