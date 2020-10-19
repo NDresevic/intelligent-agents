@@ -41,6 +41,8 @@ public class AStar extends SearchAlgorithm {
             C.add(currentState);
 
             if (currentState.isFinalState()) {
+                long endTime = System.currentTimeMillis();
+                System.out.println("A-star traversal time: " + (endTime - startTime) + "ms");
                 return currentState;
             }
 
@@ -64,8 +66,6 @@ public class AStar extends SearchAlgorithm {
             }
         }
 
-        long endTime = System.currentTimeMillis();
-        System.out.println("A-star traversal time: " + (endTime - startTime) + "ms");
         return null;
     }
 }
