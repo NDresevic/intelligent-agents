@@ -41,7 +41,7 @@ public class DeliberativeMain implements DeliberativeBehavior {
         Plan plan = algorithm.getPlan();
         System.out.println("\nAgent " + agent.id() + ":");
         System.out.println("Search algorithm: " + algorithmName);
-        System.out.println("Total cost (until now + planned): " + (vehicle.getDistance()* vehicle.costPerKm()  + algorithm.getPlanCost()));
+        System.out.println("Total cost (until now + planned): " + (vehicle.getDistance() * vehicle.costPerKm() + algorithm.getPlanCost()));
         System.out.println("New plan total distance: " + plan.totalDistance());
         System.out.println("Visited states during the last planning: " + algorithm.visitedStates);
         long endTime = System.currentTimeMillis();

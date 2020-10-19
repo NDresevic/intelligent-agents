@@ -59,9 +59,6 @@ public abstract class SearchAlgorithm {
             if (newCarriedTaskSet.isEmpty() && newAvailableTaskSet.isEmpty()) {
                 State finalState = new State(currentState.getCurrentCity(), new HashSet<>(), new HashSet<>(), vehicle);
                 children.add(finalState);
-                if (!hashStateMap.containsKey(finalState.hashCode())) {
-                    addNewState(finalState);
-                }
             } else {
 
                 // collect all the next cities it makes sense to go to and their tasks
@@ -82,10 +79,6 @@ public abstract class SearchAlgorithm {
                 for (Map.Entry<City, List<Task>> entry : nextCityTasksMap.entrySet()) {
                     City nextCity = entry.getKey();
                     List<Task> allTasks = entry.getValue();
-
-                    if (currentState.getCurrentCity().equals(nextCity)) {
-                        continue;
-                    }
 
                     newCarriedTaskSet = new ArrayList<>(currentState.getCarriedTasks());
                     newAvailableTaskSet = new ArrayList<>(currentState.getAvailableTasks());
@@ -235,6 +228,7 @@ public abstract class SearchAlgorithm {
         return plan;
     }
 
-    public double getPlanCost() { return planCost; }
-
+    public double getPlanCost() {
+        return planCost;
+    }
 }
