@@ -12,6 +12,7 @@ public class AStar extends SearchAlgorithm {
 
     private final PriorityQueue<State> Q;
     private final Set<State> C;
+    // copy of the queue Q for faster checking if the node is in the queue (contains)
     private final Set<State> Qin;
 
     public AStar(Set<Task> availableTaskSet, Set<Task> carriedTaskSet, Vehicle vehicle) {
