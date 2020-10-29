@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<history configuration="config/centralized.xml">
+	<agents>
+		<agent name="centralized-random">
+			<vehicle name="Vehicle 1"/>
+			<vehicle name="Vehicle 2"/>
+			<vehicle name="Vehicle 3"/>
+			<vehicle name="Vehicle 4"/>
+		</agent>
+	</agents>
+	<rounds>
+		<round id="1">
+			<tasks>
+				<task id="0" pickup="Cardiff" delivery="Portsmouth" weight="3" reward="51114"/>
+				<task id="1" pickup="Birmingham" delivery="Manchester" weight="3" reward="89223"/>
+				<task id="2" pickup="Cardiff" delivery="Norwich" weight="3" reward="43918"/>
+				<task id="3" pickup="Manchester" delivery="London" weight="3" reward="68101"/>
+				<task id="4" pickup="Norwich" delivery="Sheffield" weight="3" reward="48357"/>
+				<task id="5" pickup="Leeds" delivery="Manchester" weight="3" reward="87021"/>
+				<task id="6" pickup="London" delivery="Sheffield" weight="3" reward="68942"/>
+				<task id="7" pickup="Newcastle" delivery="Norwich" weight="3" reward="23333"/>
+				<task id="8" pickup="Cardiff" delivery="Sheffield" weight="3" reward="69479"/>
+				<task id="9" pickup="Newcastle" delivery="Norwich" weight="3" reward="23333"/>
+				<task id="10" pickup="Portsmouth" delivery="Manchester" weight="3" reward="54712"/>
+				<task id="11" pickup="Newcastle" delivery="Norwich" weight="3" reward="23333"/>
+				<task id="12" pickup="London" delivery="Liverpool" weight="3" reward="61890"/>
+				<task id="13" pickup="Liverpool" delivery="Leeds" weight="3" reward="93232"/>
+				<task id="14" pickup="Cardiff" delivery="Sheffield" weight="3" reward="69479"/>
+				<task id="15" pickup="Manchester" delivery="Newcastle" weight="3" reward="69390"/>
+				<task id="16" pickup="Newcastle" delivery="Birmingham" weight="3" reward="65040"/>
+				<task id="17" pickup="Plymouth" delivery="Liverpool" weight="3" reward="18071"/>
+				<task id="18" pickup="Manchester" delivery="Liverpool" weight="3" reward="99999"/>
+				<task id="19" pickup="London" delivery="Liverpool" weight="3" reward="61890"/>
+				<task id="20" pickup="Portsmouth" delivery="London" weight="3" reward="92821"/>
+				<task id="21" pickup="London" delivery="Norwich" weight="3" reward="85625"/>
+				<task id="22" pickup="Birmingham" delivery="Liverpool" weight="3" reward="83012"/>
+				<task id="23" pickup="Birmingham" delivery="London" weight="3" reward="85088"/>
+				<task id="24" pickup="Newcastle" delivery="Liverpool" weight="3" reward="75601"/>
+				<task id="25" pickup="Manchester" delivery="Plymouth" weight="3" reward="24282"/>
+				<task id="26" pickup="London" delivery="Liverpool" weight="3" reward="61890"/>
+				<task id="27" pickup="Norwich" delivery="Leeds" weight="3" reward="40965"/>
+				<task id="28" pickup="Plymouth" delivery="Birmingham" weight="3" reward="41269"/>
+				<task id="29" pickup="Newcastle" delivery="Norwich" weight="3" reward="23333"/>
+			</tasks>
+			<events>
+				<event id="0" time="0" vehicle="Vehicle 1" move="Leeds"/>
+				<event id="1" time="1094444404" vehicle="Vehicle 1" move="Sheffield"/>
+				<event id="2" time="1553333272" vehicle="Vehicle 1" move="Birmingham"/>
+				<event id="3" time="2555555452" vehicle="Vehicle 1" move="Cardiff"/>
+				<event id="4" time="3833333174" vehicle="Vehicle 1" pickup="0"/>
+				<event id="5" time="4133333159" vehicle="Vehicle 1" move="Birmingham"/>
+				<event id="6" time="5411110876" vehicle="Vehicle 1" move="London"/>
+				<event id="7" time="6722221929" vehicle="Vehicle 1" move="Portsmouth"/>
+				<event id="8" time="7553333001" vehicle="Vehicle 1" deliver="0"/>
+				<event id="9" time="7853332986" vehicle="Vehicle 1" move="London"/>
+				<event id="10" time="8684444060" vehicle="Vehicle 1" move="Birmingham"/>
+				<event id="11" time="9995555097" vehicle="Vehicle 1" pickup="1"/>
+				<event id="12" time="10295555075" vehicle="Vehicle 1" move="Manchester"/>
+			</events>
+		</round>
+	</rounds>
+	<statistics>
+		<stat rank="1" agent="centralized-random">
+			<total-tasks value="30"/>
+			<total-distance value="940.5"/>
+			<total-cost value="4703"/>
+			<total-reward value="51114"/>
+			<total-profit value="46411"/>
+		</stat>
+	</statistics>
+</history>
