@@ -7,6 +7,7 @@ import model.SolutionModel;
 import model.TaskModel;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -32,7 +33,6 @@ public class StochasticLocalSearch {
             List<SolutionModel> neighbors = new ArrayList<>();
 
 
-
             if (currentSolution.getCost() < bestSolution.getCost()) {
                 bestSolution = currentSolution;
             }
@@ -52,20 +52,34 @@ public class StochasticLocalSearch {
 //    end procedure
 
     private SolutionModel createInitialSolution() {
+        int noTaskModel = taskModelList.size();
+        Map<Vehicle, List<TaskModel>> map = new HashMap<>();
 
-        return null;
+        for (int i = 0; i < noTaskModel; i += 2) {
+            Vehicle vehicle = vehicleList.get(i % noTaskModel);
+            if (!map.containsKey(vehicle)) {
+                map.put(vehicle, new ArrayList<>());
+            }
+
+            List<TaskModel> currentTasks = map.get(vehicle);
+            currentTasks.add(taskModelList.get(i));
+            currentTasks.add(taskModelList.get(i + 1));
+            map.put(vehicle, currentTasks);
+        }
+
+        double cost = this.calculateInitialSolutionCost(map);
+        return new SolutionModel(map, cost);
     }
 
-    private double calculateInitialSolutionCost(SolutionModel solutionModel) {
+    private double calculateInitialSolutionCost(Map<Vehicle, List<TaskModel>> vehicleTasksMap) {
         double cost = 0.0;
 
-        Map<Vehicle, List<TaskModel>> vehicleTasksMap = solutionModel.getVehicleTasksMap();
-        for (Map.Entry<Vehicle, List<TaskModel>> entry: vehicleTasksMap.entrySet()) {
+        for (Map.Entry<Vehicle, List<TaskModel>> entry : vehicleTasksMap.entrySet()) {
             Vehicle vehicle = entry.getKey();
             Topology.City currentCity = vehicle.getCurrentCity();
             List<TaskModel> tasks = entry.getValue();
 
-            for (TaskModel task: tasks) {
+            for (TaskModel task : tasks) {
                 Topology.City nextCity = task.getType().equals(TaskTypeEnum.PICKUP) ?
                         task.getTask().pickupCity : task.getTask().deliveryCity;
                 cost += currentCity.distanceTo(nextCity) * vehicle.costPerKm();

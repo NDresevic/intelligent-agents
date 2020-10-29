@@ -42,8 +42,7 @@ public class CentralizedMain implements CentralizedBehavior {
             this.setupTimeout = ls.get(LogistSettings.TimeoutKey.SETUP);
             // the plan method cannot execute more than timeout_plan milliseconds
             this.planTimeout = ls.get(LogistSettings.TimeoutKey.PLAN);
-        }
-        catch (Exception exc) {
+        } catch (Exception exc) {
             System.out.println("There was a problem loading the configuration file.");
         }
     }
@@ -53,7 +52,7 @@ public class CentralizedMain implements CentralizedBehavior {
         long startTime = System.currentTimeMillis();
 
         List<TaskModel> taskModelList = new ArrayList<>();
-        for (Task task: tasks) {
+        for (Task task : tasks) {
             taskModelList.add(new TaskModel(task, TaskTypeEnum.PICKUP));
             taskModelList.add(new TaskModel(task, TaskTypeEnum.DELIVERY));
         }
@@ -64,13 +63,13 @@ public class CentralizedMain implements CentralizedBehavior {
 
         List<Plan> plans = new ArrayList<>();
         double cost = 0;
-        for (Map.Entry<Vehicle, List<TaskModel>> entry: bestSolution.getVehicleTasksMap().entrySet()) {
+        for (Map.Entry<Vehicle, List<TaskModel>> entry : bestSolution.getVehicleTasksMap().entrySet()) {
             Vehicle currentVehicle = entry.getKey();
             City currentCity = currentVehicle.getCurrentCity();
             List<TaskModel> taskModels = entry.getValue();
             Plan plan = new Plan(currentCity);
 
-            for (TaskModel task: taskModels) {
+            for (TaskModel task : taskModels) {
                 if (task.getType().equals(TaskTypeEnum.PICKUP)) {
                     plan.appendMove(task.getTask().pickupCity);
                     plan.appendPickup(task.getTask());
