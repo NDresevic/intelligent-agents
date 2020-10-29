@@ -10,6 +10,7 @@ import logist.task.Task;
 import logist.task.TaskDistribution;
 import logist.task.TaskSet;
 import logist.topology.Topology;
+import logist.topology.Topology.City;
 import model.SolutionModel;
 import model.TaskModel;
 import enums.TaskTypeEnum;
@@ -17,6 +18,7 @@ import enums.TaskTypeEnum;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class CentralizedMain implements CentralizedBehavior {
 
@@ -55,18 +57,39 @@ public class CentralizedMain implements CentralizedBehavior {
             taskModelList.add(new TaskModel(task, TaskTypeEnum.PICKUP));
             taskModelList.add(new TaskModel(task, TaskTypeEnum.DELIVERY));
         }
-        StochasticLocalSearch sls = new StochasticLocalSearch(vehicles, taskModelList);
+        StochasticLocalSearch sls = new StochasticLocalSearch(vehicles, taskModelList,
+                // todo: set time which includes later plan computation
+                System.currentTimeMillis() - startTime);
         SolutionModel bestSolution = sls.getBestSolution();
 
         List<Plan> plans = new ArrayList<>();
+        double cost = 0;
+        for (Map.Entry<Vehicle, List<TaskModel>> entry: bestSolution.getVehicleTasksMap().entrySet()) {
+            Vehicle currentVehicle = entry.getKey();
+            City currentCity = currentVehicle.getCurrentCity();
+            List<TaskModel> taskModels = entry.getValue();
+            Plan plan = new Plan(currentCity);
 
-        for (Vehicle vehicle : vehicles) {
-            // add each plan
+            for (TaskModel task: taskModels) {
+                if (task.getType().equals(TaskTypeEnum.PICKUP)) {
+                    plan.appendMove(task.getTask().pickupCity);
+                    plan.appendPickup(task.getTask());
+                } else {
+                    plan.appendMove(task.getTask().deliveryCity);
+                    plan.appendDelivery(task.getTask());
+                }
+            }
+
+            double vehicleCost = plan.totalDistance() * currentVehicle.costPerKm();
+            System.out.println("Cost for vehicle " + currentVehicle.id() + ": " + vehicleCost);
+            cost += vehicleCost;
+            plans.add(plan);
         }
 
         long endTime = System.currentTimeMillis();
         long duration = endTime - startTime;
         System.out.println("Plan generation execution: " + duration + " ms.");
+        System.out.println("Total cost of plans: " + cost);
 
         return plans;
     }
