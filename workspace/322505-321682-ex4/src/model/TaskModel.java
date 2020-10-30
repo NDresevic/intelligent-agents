@@ -26,10 +26,27 @@ public class TaskModel {
         return type + ": " + task.toString();
     }
 
-    public double updateLoad(){
-        if(type == TaskTypeEnum.PICKUP)
+    public double updateLoad() {
+        if (type == TaskTypeEnum.PICKUP)
             return task.weight;
         else
             return -task.weight;
     }
+
+    public TaskTypeEnum getPairOperation() {
+        if (type == TaskTypeEnum.PICKUP)
+            return TaskTypeEnum.DELIVERY;
+        else
+            return TaskTypeEnum.PICKUP;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        TaskModel taskModel = (TaskModel) o;
+        return task.id == taskModel.task.id &&
+                type == taskModel.type;
+    }
+
 }

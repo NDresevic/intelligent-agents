@@ -1,5 +1,6 @@
 package template;
 
+import enums.TaskTypeEnum;
 import logist.LogistSettings;
 import logist.agent.Agent;
 import logist.behavior.CentralizedBehavior;
@@ -13,7 +14,6 @@ import logist.topology.Topology;
 import logist.topology.Topology.City;
 import model.SolutionModel;
 import model.TaskModel;
-import enums.TaskTypeEnum;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -63,11 +63,13 @@ public class CentralizedMain implements CentralizedBehavior {
         StochasticLocalSearch sls = new StochasticLocalSearch(vehicles, taskModelList,
                 // todo: set time which includes later plan computation
                 System.currentTimeMillis() - startTime, p);
-        SolutionModel bestSolution = sls.getBestSolution();
+
+        sls.SLS();
+        SolutionModel solution = sls.getBestSolution();
 
         List<Plan> plans = new ArrayList<>();
         double cost = 0;
-        for (Map.Entry<Vehicle, List<TaskModel>> entry : bestSolution.getVehicleTasksMap().entrySet()) {
+        for (Map.Entry<Vehicle, List<TaskModel>> entry : solution.getVehicleTasksMap().entrySet()) {
             Vehicle currentVehicle = entry.getKey();
             City currentCity = currentVehicle.getCurrentCity();
             List<TaskModel> taskModels = entry.getValue();

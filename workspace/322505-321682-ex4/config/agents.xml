@@ -8,5 +8,11 @@
 		<set class-path="bin/"/>
 		<set class-name="template.CentralizedTemplate"/>
 	</agent>
+
+	<agent name="centralized-main">
+		<set class-path="bin/"/>
+		<set class-name="template.CentralizedMain"/>
+		<set p="0.4"/>
+	</agent>
 	
 </agents>

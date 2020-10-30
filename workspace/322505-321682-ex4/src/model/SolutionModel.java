@@ -19,40 +19,66 @@ public class SolutionModel {
         this.cost = cost;
         createVehicleLoad();
         createPairIndex();
+
+//        for (Map.Entry<TaskModel, Integer> entry : pairIndex.entrySet()){
+//            System.out.println(entry.getKey() + " : " + entry.getValue());
+//            System.out.println("!!!!!!!!!!!!!!");
+//        }
+//        System.out.println(pairIndex.size());
+//
+//        for(Vehicle vehicle : vehicleTasksMap.keySet()){
+//            List<TaskModel> tasks = vehicleTasksMap.get(vehicle);
+//
+//            for(TaskModel task : tasks) {
+//                System.out.println(pairIndex.containsKey(task));
+//                System.out.println(task + " par: " + pairIndex.get(task));
+//            }
+//
+//            System.out.println("**************");
+//        }
     }
 
-    public SolutionModel(SolutionModel solution){
-        this.vehicleTasksMap = new HashMap<>(solution.getVehicleTasksMap());
-        this.cost = solution.getCost();
+    public SolutionModel(SolutionModel solution) {
+        this.vehicleTasksMap = new HashMap<>(solution.vehicleTasksMap);
+        this.vehicleLoad = new HashMap<>(solution.vehicleLoad);
+        this.pairIndex = new HashMap<>(solution.pairIndex);
+        this.cost = solution.cost;
     }
 
-    private void createVehicleLoad(){
+    private void createVehicleLoad() {
         vehicleLoad = new HashMap<>();
-        for(Vehicle vehicle : vehicleTasksMap.keySet()){
+        for (Map.Entry<Vehicle, List<TaskModel>> entry : vehicleTasksMap.entrySet()) {
             ArrayList<Double> loads = new ArrayList<>();
-            List<TaskModel> tasks = vehicleTasksMap.get(vehicle);
+            List<TaskModel> tasks = entry.getValue();
             double currentLoad = 0;
-            for(TaskModel task : tasks){
+            for (TaskModel task : tasks) {
                 currentLoad += task.updateLoad();
                 loads.add(currentLoad);
             }
-            vehicleLoad.put(vehicle, loads);
+            vehicleLoad.put(entry.getKey(), loads);
         }
     }
 
-    private void createPairIndex(){
-        //FIXME
+    private void createPairIndex() {
+        pairIndex = new HashMap<>();
+        for (Map.Entry<Vehicle, List<TaskModel>> entry : vehicleTasksMap.entrySet()) {
+            List<TaskModel> tasks = entry.getValue();
+            for (int i = 0; i < tasks.size(); i++) {
+                pairIndex.put(new TaskModel(tasks.get(i).getTask(), tasks.get(i).getPairOperation()),
+                        i);
+            }
+        }
     }
 
     public Map<Vehicle, List<TaskModel>> getVehicleTasksMap() {
         return vehicleTasksMap;
     }
 
-    public Map<Vehicle, List<Double>> getVehicleLoad() { return vehicleLoad; }
-
-    public double getCost() {
-        return cost;
+    public Map<Vehicle, List<Double>> getVehicleLoad() {
+        return vehicleLoad;
     }
+
+    public double getCost() { return cost; }
 
     public void setCost(double cost) { this.cost = cost; }
 
