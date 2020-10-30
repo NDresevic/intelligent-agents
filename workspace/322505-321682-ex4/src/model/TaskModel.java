@@ -25,4 +25,11 @@ public class TaskModel {
     public String toString() {
         return type + ": " + task.toString();
     }
+
+    public double updateLoad(){
+        if(type == TaskTypeEnum.PICKUP)
+            return task.weight;
+        else
+            return -task.weight;
+    }
 }

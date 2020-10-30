@@ -1,6 +1,7 @@
 package model;
 
 import enums.OperationTypeEnum;
+import logist.simulation.Vehicle;
 
 public class OperationModel {
 
@@ -27,6 +28,9 @@ public class OperationModel {
 
     private SolutionModel changeTasksOrder() {
         // create new solution and return
+        //SolutionModel(Map< Vehicle, List<TaskModel>> vehicleTasksMap, double cost)
+
+
         return null;
     }
 }

@@ -25,6 +25,7 @@ public class CentralizedMain implements CentralizedBehavior {
     private Topology topology;
     private TaskDistribution distribution;
     private Agent agent;
+    private double p;
     private long setupTimeout;
     private long planTimeout;
 
@@ -33,6 +34,7 @@ public class CentralizedMain implements CentralizedBehavior {
         this.topology = topology;
         this.distribution = distribution;
         this.agent = agent;
+        this.p = p;
 
         // this code is used to get the timeouts
         try {
@@ -45,6 +47,8 @@ public class CentralizedMain implements CentralizedBehavior {
         } catch (Exception exc) {
             System.out.println("There was a problem loading the configuration file.");
         }
+
+        this.p = agent.readProperty("p", Double.class, 0.4);
     }
 
     @Override
@@ -58,7 +62,7 @@ public class CentralizedMain implements CentralizedBehavior {
         }
         StochasticLocalSearch sls = new StochasticLocalSearch(vehicles, taskModelList,
                 // todo: set time which includes later plan computation
-                System.currentTimeMillis() - startTime);
+                System.currentTimeMillis() - startTime, p);
         SolutionModel bestSolution = sls.getBestSolution();
 
         List<Plan> plans = new ArrayList<>();

@@ -17,11 +17,14 @@ public class StochasticLocalSearch {
     private List<TaskModel> taskModelList;
     private SolutionModel bestSolution;
     private long remainingTime;
+    private double p;
 
-    public StochasticLocalSearch(List<Vehicle> vehicleList, List<TaskModel> taskModelList, long remainingTime) {
+    public StochasticLocalSearch(List<Vehicle> vehicleList, List<TaskModel> taskModelList,
+                                 long remainingTime, double p) {
         this.vehicleList = vehicleList;
         this.taskModelList = taskModelList;
         this.remainingTime = remainingTime;
+        this.p = p;
     }
 
     public void SLS() {
@@ -56,7 +59,7 @@ public class StochasticLocalSearch {
         Map<Vehicle, List<TaskModel>> map = new HashMap<>();
 
         for (int i = 0; i < noTaskModel; i += 2) {
-            Vehicle vehicle = vehicleList.get(i % noTaskModel);
+            Vehicle vehicle = vehicleList.get(i % 2);
             if (!map.containsKey(vehicle)) {
                 map.put(vehicle, new ArrayList<>());
             }
