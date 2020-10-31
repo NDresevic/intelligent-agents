@@ -69,10 +69,10 @@ public class CentralizedMain implements CentralizedBehavior {
 
         List<Plan> plans = new ArrayList<>();
         double cost = 0;
-        for (Map.Entry<Vehicle, TaskModel[]> entry : solution.getVehicleTasksMap().entrySet()) {
+        for (Map.Entry<Vehicle, ArrayList<TaskModel>> entry : solution.getVehicleTasksMap().entrySet()) {
             Vehicle currentVehicle = entry.getKey();
             City currentCity = currentVehicle.getCurrentCity();
-            TaskModel[] taskModels = entry.getValue();
+            List<TaskModel> taskModels = entry.getValue();
             Plan plan = new Plan(currentCity);
 
             for (TaskModel task : taskModels) {

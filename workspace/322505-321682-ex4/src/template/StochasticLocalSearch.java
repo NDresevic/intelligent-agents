@@ -1,6 +1,5 @@
 package template;
 
-import enums.OperationTypeEnum;
 import logist.simulation.Vehicle;
 import model.SolutionModel;
 import model.SwapTasksOperation;
@@ -44,16 +43,13 @@ public class StochasticLocalSearch {
 
     private SolutionModel exploreAllNeighborsForRandomVehicle(SolutionModel currentSolution, Double bestCost) {
         Vehicle vehicle = vehicleList.get(new Random().nextInt(vehicleList.size()));
-
-        TaskModel[] tasks = currentSolution.getVehicleTasksMap().get(vehicle);
+        List<TaskModel> tasks = currentSolution.getVehicleTasksMap().get(vehicle);
 
         SolutionModel bestNeighbor = null;
-
         //swapping every two tasks
-        for (int i = 0; i < tasks.length; i++) {
-            for (int j = i + 1; j < tasks.length; j++) {
-                SolutionModel neighbor = new SwapTasksOperation(currentSolution,
-                        OperationTypeEnum.CHANGE_TASK_ORDER, i, j, vehicle).getNewSolution();
+        for (int i = 0; i < tasks.size(); i++) {
+            for (int j = i + 1; j < tasks.size(); j++) {
+                SolutionModel neighbor = new SwapTasksOperation(currentSolution, i, j, vehicle).getNewSolution();
                 if (neighbor == null)
                     continue;
 
@@ -63,25 +59,24 @@ public class StochasticLocalSearch {
             }
         }
 
-        if(bestNeighbor.getCost() < bestSolution.getCost())
+        if (bestNeighbor.getCost() < bestSolution.getCost())
             bestSolution = bestNeighbor;
 
         return bestNeighbor;
     }
 
     private SolutionModel createInitialSolution() {
-        int noTaskModel = taskModelList.size();
-        Map<Vehicle, TaskModel[]> map = new HashMap<>();
+        Map<Vehicle, ArrayList<TaskModel>> map = new HashMap<>();
 
-        for (int i = 0; i < noTaskModel; i += 2) {
+        for (int i = 0; i < taskModelList.size(); i += 2) {
             Vehicle vehicle = vehicleList.get((i / 2) % vehicleList.size());
             if (!map.containsKey(vehicle)) {
-                map.put(vehicle, new TaskModel[taskModelList.size()]);
+                map.put(vehicle, new ArrayList<>());
             }
 
-            TaskModel[] currentTasks = map.get(vehicle);
-            currentTasks[i] = taskModelList.get(i);
-            currentTasks[i + 1] = taskModelList.get(i + 1);
+            ArrayList<TaskModel> currentTasks = map.get(vehicle);
+            currentTasks.add(taskModelList.get(i));
+            currentTasks.add(taskModelList.get(i + 1));
             map.put(vehicle, currentTasks);
         }
 
@@ -91,5 +86,4 @@ public class StochasticLocalSearch {
     public SolutionModel getBestSolution() {
         return bestSolution;
     }
-
 }

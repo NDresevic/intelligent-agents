@@ -8,82 +8,61 @@ import java.util.*;
 
 public class SolutionModel {
 
-    private Map<Vehicle, TaskModel[]> vehicleTasksMap;
-    private Map<Vehicle, double[]> vehicleLoad;
-    private Map<TaskModel, Integer> taskPairIndex;
+    // [vehicle -> list of TaskModel that vehicle is carrying in order]
+    private Map<Vehicle, ArrayList<TaskModel>> vehicleTasksMap;
+    // [TaskModel -> index of it's pair]
+    // TaskModel-s ti and tj are pairs iff ti = TaskModel(t, PICKUP) and tj = TaskModel(t, DELIVERY)
+    private Map<TaskModel, Integer> taskPairIndexMap;
     private double cost;
 
-    public SolutionModel(Map<Vehicle, TaskModel[]> vehicleTasksMap) {
+    public SolutionModel(Map<Vehicle, ArrayList<TaskModel>> vehicleTasksMap) {
         this.vehicleTasksMap = vehicleTasksMap;
-        this.calculateInitialSolutionCost();
-        this.createVehicleLoad();
-        this.createTaskPairIndex();
+        this.taskPairIndexMap = new HashMap<>();
+        this.cost = 0.0;
+        this.createInitialSolutionParameters();
     }
 
     public SolutionModel(SolutionModel solution) {
         this.vehicleTasksMap = new HashMap<>(solution.vehicleTasksMap);
-        this.vehicleLoad = new HashMap<>(solution.vehicleLoad);
-        this.taskPairIndex = new HashMap<>(solution.taskPairIndex);
+        this.taskPairIndexMap = new HashMap<>(solution.taskPairIndexMap);
         this.cost = solution.cost;
     }
 
-    private void calculateInitialSolutionCost() {
-        cost = 0.0;
-
-        for (Map.Entry<Vehicle, TaskModel[]> entry : vehicleTasksMap.entrySet()) {
+    /**
+     * Method that initializes for first solution cost and creates a mapping for each task index of it's corresponding
+     * pair.
+     */
+    private void createInitialSolutionParameters() {
+        for (Map.Entry<Vehicle, ArrayList<TaskModel>> entry : vehicleTasksMap.entrySet()) {
             Vehicle vehicle = entry.getKey();
             City currentCity = vehicle.getCurrentCity();
-            TaskModel[] tasks = entry.getValue();
+            List<TaskModel> tasks = entry.getValue();
 
-            System.out.println(tasks.length);
-            for (int i = 0; i < tasks.length; i++) {
-                TaskModel task = tasks[i];
+            for (TaskModel task : tasks) {
+                // update cost
                 City nextCity = task.getType().equals(TaskTypeEnum.PICKUP) ?
                         task.getTask().pickupCity : task.getTask().deliveryCity;
                 cost += currentCity.distanceTo(nextCity) * vehicle.costPerKm();
+
+                // update task index map
+                taskPairIndexMap.put(new TaskModel(task.getTask(), task.getPairTaskType()), tasks.indexOf(task));
             }
         }
     }
 
-    private void createVehicleLoad() {
-        vehicleLoad = new HashMap<>();
-        for (Map.Entry<Vehicle, TaskModel[]> entry : vehicleTasksMap.entrySet()) {
-            TaskModel[] tasks = entry.getValue();
-            double[] loads = new double[tasks.length];
-
-            double currentLoad = 0;
-            for (int i = 0; i < tasks.length; i++) {
-                TaskModel task = tasks[i];
-                currentLoad += task.updateLoad();
-                loads[i] = currentLoad;
-            }
-            vehicleLoad.put(entry.getKey(), loads);
-        }
-    }
-
-    private void createTaskPairIndex() {
-        taskPairIndex = new HashMap<>();
-        for (Map.Entry<Vehicle, TaskModel[]> entry : vehicleTasksMap.entrySet()) {
-            TaskModel[] tasks = entry.getValue();
-            for (int i = 0; i < tasks.length; i++) {
-                taskPairIndex.put(new TaskModel(tasks[i].getTask(), tasks[i].getPairOperation()), i);
-            }
-        }
-    }
-
-    public Map<Vehicle, TaskModel[]> getVehicleTasksMap() {
+    public Map<Vehicle, ArrayList<TaskModel>> getVehicleTasksMap() {
         return vehicleTasksMap;
     }
 
-    public Map<Vehicle, double[]> getVehicleLoad() {
-        return vehicleLoad;
+    public Map<TaskModel, Integer> getTaskPairIndexMap() {
+        return taskPairIndexMap;
     }
 
-    public double getCost() { return cost; }
+    public double getCost() {
+        return cost;
+    }
 
-    public void setCost(double cost) { this.cost = cost; }
-
-    public Map<TaskModel, Integer> getTaskPairIndex() {
-        return taskPairIndex;
+    public void setCost(double cost) {
+        this.cost = cost;
     }
 }

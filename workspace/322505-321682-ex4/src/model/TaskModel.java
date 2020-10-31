@@ -28,18 +28,12 @@ public class TaskModel {
         return type + ": " + task.toString();
     }
 
-    public double updateLoad() {
-        if (type == TaskTypeEnum.PICKUP)
-            return task.weight;
-        else
-            return -task.weight;
+    public double getUpdatedLoad() {
+        return type == TaskTypeEnum.PICKUP ? task.weight : -task.weight;
     }
 
-    public TaskTypeEnum getPairOperation() {
-        if (type == TaskTypeEnum.PICKUP)
-            return TaskTypeEnum.DELIVERY;
-        else
-            return TaskTypeEnum.PICKUP;
+    public TaskTypeEnum getPairTaskType() {
+        return type == TaskTypeEnum.PICKUP ? TaskTypeEnum.DELIVERY : TaskTypeEnum.PICKUP;
     }
 
     @Override
