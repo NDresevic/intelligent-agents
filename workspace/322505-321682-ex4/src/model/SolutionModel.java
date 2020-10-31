@@ -1,55 +1,55 @@
 package model;
 
+import enums.TaskTypeEnum;
 import logist.simulation.Vehicle;
+import logist.topology.Topology.City;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class SolutionModel {
 
-    private Map<Vehicle, List<TaskModel>> vehicleTasksMap;
+    private Map<Vehicle, TaskModel[]> vehicleTasksMap;
     private Map<Vehicle, List<Double>> vehicleLoad;
-    private Map<TaskModel, Integer> pairIndex;
+    private Map<TaskModel, Integer> taskPairIndex;
     private double cost;
 
-    public SolutionModel(Map<Vehicle, List<TaskModel>> vehicleTasksMap, double cost) {
+    public SolutionModel(Map<Vehicle, TaskModel[]> vehicleTasksMap) {
         this.vehicleTasksMap = vehicleTasksMap;
-        this.cost = cost;
-        createVehicleLoad();
-        createPairIndex();
-
-//        for (Map.Entry<TaskModel, Integer> entry : pairIndex.entrySet()){
-//            System.out.println(entry.getKey() + " : " + entry.getValue());
-//            System.out.println("!!!!!!!!!!!!!!");
-//        }
-//        System.out.println(pairIndex.size());
-//
-//        for(Vehicle vehicle : vehicleTasksMap.keySet()){
-//            List<TaskModel> tasks = vehicleTasksMap.get(vehicle);
-//
-//            for(TaskModel task : tasks) {
-//                System.out.println(pairIndex.containsKey(task));
-//                System.out.println(task + " par: " + pairIndex.get(task));
-//            }
-//
-//            System.out.println("**************");
-//        }
+        this.calculateInitialSolutionCost();
+        this.createVehicleLoad();
+        this.createTaskPairIndex();
     }
 
     public SolutionModel(SolutionModel solution) {
         this.vehicleTasksMap = new HashMap<>(solution.vehicleTasksMap);
         this.vehicleLoad = new HashMap<>(solution.vehicleLoad);
-        this.pairIndex = new HashMap<>(solution.pairIndex);
+        this.taskPairIndex = new HashMap<>(solution.taskPairIndex);
         this.cost = solution.cost;
+    }
+
+    private void calculateInitialSolutionCost() {
+        cost = 0.0;
+
+        for (Map.Entry<Vehicle, TaskModel[]> entry : vehicleTasksMap.entrySet()) {
+            Vehicle vehicle = entry.getKey();
+            City currentCity = vehicle.getCurrentCity();
+            TaskModel[] tasks = entry.getValue();
+
+            System.out.println(tasks.length);
+            for (int i = 0; i < tasks.length; i++) {
+                TaskModel task = tasks[i];
+                City nextCity = task.getType().equals(TaskTypeEnum.PICKUP) ?
+                        task.getTask().pickupCity : task.getTask().deliveryCity;
+                cost += currentCity.distanceTo(nextCity) * vehicle.costPerKm();
+            }
+        }
     }
 
     private void createVehicleLoad() {
         vehicleLoad = new HashMap<>();
-        for (Map.Entry<Vehicle, List<TaskModel>> entry : vehicleTasksMap.entrySet()) {
+        for (Map.Entry<Vehicle, TaskModel[]> entry : vehicleTasksMap.entrySet()) {
             ArrayList<Double> loads = new ArrayList<>();
-            List<TaskModel> tasks = entry.getValue();
+            TaskModel[] tasks = entry.getValue();
             double currentLoad = 0;
             for (TaskModel task : tasks) {
                 currentLoad += task.updateLoad();
@@ -59,18 +59,17 @@ public class SolutionModel {
         }
     }
 
-    private void createPairIndex() {
-        pairIndex = new HashMap<>();
-        for (Map.Entry<Vehicle, List<TaskModel>> entry : vehicleTasksMap.entrySet()) {
-            List<TaskModel> tasks = entry.getValue();
-            for (int i = 0; i < tasks.size(); i++) {
-                pairIndex.put(new TaskModel(tasks.get(i).getTask(), tasks.get(i).getPairOperation()),
-                        i);
+    private void createTaskPairIndex() {
+        taskPairIndex = new HashMap<>();
+        for (Map.Entry<Vehicle, TaskModel[]> entry : vehicleTasksMap.entrySet()) {
+            TaskModel[] tasks = entry.getValue();
+            for (int i = 0; i < tasks.length; i++) {
+                taskPairIndex.put(new TaskModel(tasks[i].getTask(), tasks[i].getPairOperation()), i);
             }
         }
     }
 
-    public Map<Vehicle, List<TaskModel>> getVehicleTasksMap() {
+    public Map<Vehicle, TaskModel[]> getVehicleTasksMap() {
         return vehicleTasksMap;
     }
 
@@ -82,5 +81,7 @@ public class SolutionModel {
 
     public void setCost(double cost) { this.cost = cost; }
 
-    public Map<TaskModel, Integer> getPairIndex() { return pairIndex; }
+    public Map<TaskModel, Integer> getTaskPairIndex() {
+        return taskPairIndex;
+    }
 }

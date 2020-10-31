@@ -1,9 +1,7 @@
 package template;
 
 import enums.OperationTypeEnum;
-import enums.TaskTypeEnum;
 import logist.simulation.Vehicle;
-import logist.topology.Topology;
 import model.SolutionModel;
 import model.SwapTasksOperation;
 import model.TaskModel;
@@ -26,15 +24,6 @@ public class StochasticLocalSearch {
         this.p = p;
     }
 
-    //        procedure SLS(X,D,C,f )
-//    A ← SelectInitialSolution(X, D, C, f)
-//    repeat
-//        Aold ← A
-//        N ← ChooseNeighbours(Aold, X, D, C, f)
-//        A ← LocalChoice(N, f)
-//    until termination condition met
-//     return A
-//    end procedure
     public void SLS() {
         SolutionModel currentSolution = createInitialSolution();
         bestSolution = currentSolution;
@@ -56,13 +45,13 @@ public class StochasticLocalSearch {
     private SolutionModel exploreAllNeighborsForRandomVehicle(SolutionModel currentSolution, Double bestCost) {
         Vehicle vehicle = vehicleList.get(new Random().nextInt(vehicleList.size()));
 
-        List<TaskModel> tasks = currentSolution.getVehicleTasksMap().get(vehicle);
+        TaskModel[] tasks = currentSolution.getVehicleTasksMap().get(vehicle);
 
         SolutionModel bestNeighbor = null;
 
         //swapping every two tasks
-        for (int i = 0; i < tasks.size(); i++) {
-            for (int j = i + 1; j < tasks.size(); j++) {
+        for (int i = 0; i < tasks.length; i++) {
+            for (int j = i + 1; j < tasks.length; j++) {
                 SolutionModel neighbor = new SwapTasksOperation(currentSolution,
                         OperationTypeEnum.CHANGE_TASK_ORDER, i, j, vehicle).getNewSolution();
                 if (neighbor == null)
@@ -82,40 +71,21 @@ public class StochasticLocalSearch {
 
     private SolutionModel createInitialSolution() {
         int noTaskModel = taskModelList.size();
-        Map<Vehicle, List<TaskModel>> map = new HashMap<>();
+        Map<Vehicle, TaskModel[]> map = new HashMap<>();
 
         for (int i = 0; i < noTaskModel; i += 2) {
             Vehicle vehicle = vehicleList.get((i / 2) % vehicleList.size());
             if (!map.containsKey(vehicle)) {
-                map.put(vehicle, new ArrayList<>());
+                map.put(vehicle, new TaskModel[taskModelList.size()]);
             }
 
-            List<TaskModel> currentTasks = map.get(vehicle);
-            currentTasks.add(taskModelList.get(i));
-            currentTasks.add(taskModelList.get(i + 1));
+            TaskModel[] currentTasks = map.get(vehicle);
+            currentTasks[i] = taskModelList.get(i);
+            currentTasks[i + 1] = taskModelList.get(i + 1);
             map.put(vehicle, currentTasks);
         }
 
-        double cost = this.calculateInitialSolutionCost(map);
-        return new SolutionModel(map, cost);
-    }
-
-    private double calculateInitialSolutionCost(Map<Vehicle, List<TaskModel>> vehicleTasksMap) {
-        double cost = 0.0;
-
-        for (Map.Entry<Vehicle, List<TaskModel>> entry : vehicleTasksMap.entrySet()) {
-            Vehicle vehicle = entry.getKey();
-            Topology.City currentCity = vehicle.getCurrentCity();
-            List<TaskModel> tasks = entry.getValue();
-
-            for (TaskModel task : tasks) {
-                Topology.City nextCity = task.getType().equals(TaskTypeEnum.PICKUP) ?
-                        task.getTask().pickupCity : task.getTask().deliveryCity;
-                cost += currentCity.distanceTo(nextCity) * vehicle.costPerKm();
-            }
-        }
-
-        return cost;
+        return new SolutionModel(map);
     }
 
     public SolutionModel getBestSolution() {
