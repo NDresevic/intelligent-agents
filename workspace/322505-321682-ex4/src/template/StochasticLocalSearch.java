@@ -47,9 +47,13 @@ public class StochasticLocalSearch {
 
     private SolutionModel exploreAllNeighborsForRandomVehicle(SolutionModel currentSolution) {
         Vehicle vehicle = vehicleList.get(new Random().nextInt(vehicleList.size()));
-
+        Map<Vehicle, ArrayList<TaskModel>> map = currentSolution.getVehicleTasksMap();
+        int i = new Random().nextInt(map.get(vehicle).size());
+        int j = new Random().nextInt(map.get(vehicle).size());
         SolutionModel bestNeighbor = null;
-        SolutionModel neighbor = new SwapTasksOperation(currentSolution, 1, 4, vehicle).getNewSolution();
+
+        System.out.println("for v: " + vehicle.id() + " switching tasks " + i + " and " + j);
+        SolutionModel neighbor = new SwapTasksOperation(currentSolution, i, j, vehicle).getNewSolution();
         if (neighbor != null) {
             System.out.println("Komsija cost: " + neighbor.getCost());
 //            if (bestNeighbor == null || neighbor.getCost() < bestCost) {

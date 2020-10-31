@@ -25,6 +25,11 @@ public class SwapTasksOperation extends Operation {
         SolutionModel neighborSolution = new SolutionModel(currentSolution);
         ArrayList<TaskModel> tasks = neighborSolution.getVehicleTasksMap().get(vehicle);
 
+        if (i > j) {
+            int temp = i;
+            i = j;
+            j = temp;
+        }
         TaskModel ti = tasks.get(i);
         TaskModel tj = tasks.get(j);
         if (ti.getType() == TaskTypeEnum.PICKUP && neighborSolution.getTaskPairIndexMap().get(ti) <= j

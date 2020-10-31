@@ -69,10 +69,9 @@ public class CentralizedMain implements CentralizedBehavior {
 
         List<Plan> plans = new ArrayList<>();
         double cost = 0;
-        for (Map.Entry<Vehicle, ArrayList<TaskModel>> entry : solution.getVehicleTasksMap().entrySet()) {
-            Vehicle currentVehicle = entry.getKey();
-            City currentCity = currentVehicle.getCurrentCity();
-            List<TaskModel> taskModels = entry.getValue();
+        for (Vehicle vehicle: vehicles) {
+            City currentCity = vehicle.getCurrentCity();
+            List<TaskModel> taskModels = solution.getVehicleTasksMap().get(vehicle);
             Plan plan = new Plan(currentCity);
 
             for (TaskModel task : taskModels) {
@@ -99,10 +98,11 @@ public class CentralizedMain implements CentralizedBehavior {
                 currentCity = nextCity;
             }
 
-            double vehicleCost = plan.totalDistance() * currentVehicle.costPerKm();
-            System.out.println("Cost for vehicle " + currentVehicle.id() + ": " + vehicleCost);
+            double vehicleCost = plan.totalDistance() * vehicle.costPerKm();
+            System.out.println("Cost for vehicle " + vehicle.id() + ": " + vehicleCost);
             cost += vehicleCost;
             plans.add(plan);
+            System.out.println(plan);
         }
 
         long endTime = System.currentTimeMillis();
