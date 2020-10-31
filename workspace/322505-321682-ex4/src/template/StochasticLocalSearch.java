@@ -43,25 +43,18 @@ public class StochasticLocalSearch {
 
     private SolutionModel exploreAllNeighborsForRandomVehicle(SolutionModel currentSolution, Double bestCost) {
         Vehicle vehicle = vehicleList.get(new Random().nextInt(vehicleList.size()));
-        List<TaskModel> tasks = currentSolution.getVehicleTasksMap().get(vehicle);
 
         SolutionModel bestNeighbor = null;
-        //swapping every two tasks
-//        for (int i = 0; i < tasks.size(); i++) {
-//            for (int j = i + 1; j < tasks.size(); j++) {
-                SolutionModel neighbor = new SwapTasksOperation(currentSolution, 1, 2, vehicle).getNewSolution();
-                if (neighbor == null)
-                    //continue;
-                    System.out.println("neighbor je null");
-
-                System.out.println("Komsija cost: " + neighbor.getCost());
-                if (bestNeighbor == null || neighbor.getCost() < bestNeighbor.getCost())
-                    bestNeighbor = neighbor;
+        SolutionModel neighbor = new SwapTasksOperation(currentSolution, 1, 2, vehicle).getNewSolution();
+        if (neighbor != null) {
+            System.out.println("Komsija cost: " + neighbor.getCost());
+//            if (bestNeighbor == null || neighbor.getCost() < bestCost) {
+                bestNeighbor = neighbor;
 //            }
-//        }
-
-        if (bestNeighbor != null && bestNeighbor.getCost() < bestSolution.getCost())
-            bestSolution = bestNeighbor;
+        } else {
+            System.out.println("neighbor je null");
+        }
+        System.out.println("best nb cost: " + bestNeighbor.getCost());
 
         return bestNeighbor;
     }

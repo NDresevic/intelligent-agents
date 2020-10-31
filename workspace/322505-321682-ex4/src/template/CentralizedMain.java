@@ -76,13 +76,27 @@ public class CentralizedMain implements CentralizedBehavior {
             Plan plan = new Plan(currentCity);
 
             for (TaskModel task : taskModels) {
+                City nextCity;
+
                 if (task.getType().equals(TaskTypeEnum.PICKUP)) {
-                    plan.appendMove(task.getTask().pickupCity);
+                    nextCity = task.getTask().pickupCity;
+                    List<City> intermediateCities = currentCity.pathTo(nextCity);
+                    for (City city : intermediateCities) {
+                        plan.appendMove(city);
+                    }
+
                     plan.appendPickup(task.getTask());
                 } else {
-                    plan.appendMove(task.getTask().deliveryCity);
+                    nextCity = task.getTask().deliveryCity;
+                    List<City> intermediateCities = currentCity.pathTo(nextCity);
+                    for (City city : intermediateCities) {
+                        plan.appendMove(city);
+                    }
+
                     plan.appendDelivery(task.getTask());
                 }
+
+                currentCity = nextCity;
             }
 
             double vehicleCost = plan.totalDistance() * currentVehicle.costPerKm();
