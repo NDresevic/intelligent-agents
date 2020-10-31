@@ -47,19 +47,20 @@ public class StochasticLocalSearch {
 
         SolutionModel bestNeighbor = null;
         //swapping every two tasks
-        for (int i = 0; i < tasks.size(); i++) {
-            for (int j = i + 1; j < tasks.size(); j++) {
-                SolutionModel neighbor = new SwapTasksOperation(currentSolution, i, j, vehicle).getNewSolution();
+//        for (int i = 0; i < tasks.size(); i++) {
+//            for (int j = i + 1; j < tasks.size(); j++) {
+                SolutionModel neighbor = new SwapTasksOperation(currentSolution, 1, 2, vehicle).getNewSolution();
                 if (neighbor == null)
-                    continue;
+                    //continue;
+                    System.out.println("neighbor je null");
 
                 System.out.println("Komsija cost: " + neighbor.getCost());
                 if (bestNeighbor == null || neighbor.getCost() < bestNeighbor.getCost())
                     bestNeighbor = neighbor;
-            }
-        }
+//            }
+//        }
 
-        if (bestNeighbor.getCost() < bestSolution.getCost())
+        if (bestNeighbor != null && bestNeighbor.getCost() < bestSolution.getCost())
             bestSolution = bestNeighbor;
 
         return bestNeighbor;

@@ -3,10 +3,9 @@ package model;
 import enums.OperationTypeEnum;
 import enums.TaskTypeEnum;
 import logist.simulation.Vehicle;
+import logist.topology.Topology;
 
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 public class SwapTasksOperation extends Operation {
 
@@ -25,15 +24,63 @@ public class SwapTasksOperation extends Operation {
     public SolutionModel getNewSolution() {
         SolutionModel neighborSolution = new SolutionModel(currentSolution);
         ArrayList<TaskModel> tasks = neighborSolution.getVehicleTasksMap().get(vehicle);
-//        double[] loads = neighborSolution.getVehicleLoad().get(vehicle);
+
+        TaskModel ti = tasks.get(i);
+        TaskModel tj = tasks.get(j);
+        if (ti.getType() == TaskTypeEnum.PICKUP && neighborSolution.getTaskPairIndexMap().get(ti) <= j
+                ||
+                tj.getType() == TaskTypeEnum.DELIVERY && neighborSolution.getTaskPairIndexMap().get(tj) >= i)
+            return null;
+
+        ArrayList<TaskModel> neighborTasks = new ArrayList<>();
+
+        int load = 0;
+        double cost = 0d;
+
+        Topology.City currentCity = vehicle.getCurrentCity();
+        for (int k = 0; k < tasks.size(); k++) {
+            TaskModel task = tasks.get(k);
+            TaskModel newTask;
+            if (k != i && k != j) {
+                newTask = task;
+            } else if (k == i) {
+                newTask = tasks.get(j);
+                neighborSolution.getTaskPairIndexMap().put(new TaskModel(newTask.getTask(), newTask.getPairTaskType()), i);
+            } else { //k==j
+                newTask = tasks.get(i);
+                neighborSolution.getTaskPairIndexMap().put(new TaskModel(newTask.getTask(), newTask.getPairTaskType()), j);
+            }
+            load = load + newTask.getUpdatedLoad();
+            neighborTasks.add(newTask);
+            if (load > vehicle.capacity())
+                return null;
+
+            Topology.City nextCity = newTask.getType().equals(TaskTypeEnum.PICKUP) ?
+                    newTask.getTask().pickupCity : newTask.getTask().deliveryCity;
+            cost += currentCity.distanceTo(nextCity) * vehicle.costPerKm();
+        }
+
+        neighborSolution.getVehicleTasksMap().put(vehicle, neighborTasks);
+        neighborSolution.setCost(cost);
+
+
+
+//        ArrayList<TaskModel> neighborTasks = new ArrayList<>();
+//        int load = 0;
+//        double cost = 0d;
 //
-//        TaskModel ti = tasks[i];
-//        TaskModel tj = tasks[j];
+////        TaskModel ti = tasks.get(i);
+////        TaskModel tj = tasks.get(j);
 //
-//        if (ti.getType() == TaskTypeEnum.PICKUP && neighborSolution.getTaskPairIndex().get(ti) <= j
-//                ||
-//                tj.getType() == TaskTypeEnum.DELIVERY && neighborSolution.getTaskPairIndex().get(tj) >= i)
-//            return null;
+////        if (ti.getType() == TaskTypeEnum.PICKUP && neighborSolution.getTaskPairIndexMap().get(ti) <= j
+////                ||
+////                tj.getType() == TaskTypeEnum.DELIVERY && neighborSolution.getTaskPairIndexMap().get(tj) >= i)
+////            return null;
+//
+//        for(TaskModel taskModel : tasks){
+//
+//        }
+//
 //
 ////        loads.add(j, loads.get(j) + tasks[i].updateLoad());
 ////        if (loads.get(j) > vehicle.capacity())
@@ -41,23 +88,25 @@ public class SwapTasksOperation extends Operation {
 ////        for (int k = i + 1; k < j; k++) {
 ////            loads.add(k, loads.get(k) + tasks[k].updateLoad());
 ////            if (loads.get(k) > vehicle.capacity())
-////                return null;
-////        }
-////        loads.add(j, loads.get(j) + tasks[i].updateLoad());
-////        if (loads.get(j) > vehicle.capacity())
-////            return null;
-////        for (int k = j + 1; k < tasks.length; k++) {
-////            loads.add(k, loads.get(k) + tasks[k].updateLoad());
-////            if (loads.get(k) > vehicle.capacity())
-////                return null;
-////        }
-////        neighborSolution.getVehicleLoad().put(vehicle, loads);
+//////                return null;
+//////        }
+//////        loads.add(j, loads.get(j) + tasks[i].updateLoad());
+//////        if (loads.get(j) > vehicle.capacity())
+//////            return null;
+//////        for (int k = j + 1; k < tasks.length; k++) {
+//////            loads.add(k, loads.get(k) + tasks[k].updateLoad());
+//////            if (loads.get(k) > vehicle.capacity())
+//////                return null;
+//////        }
+//////        neighborSolution.getVehicleLoad().put(vehicle, loads);
 //
-//        tasks[i] = tj;
-//        tasks[j] = ti;
-//        neighborSolution.getVehicleTasksMap().put(vehicle, tasks);
-//        neighborSolution.getTaskPairIndex().put(ti, j);
-//        neighborSolution.getTaskPairIndex().put(tj, i);
+//
+////        tasks[i] = tj;
+////        tasks[j] = ti;
+//
+//        neighborSolution.getVehicleTasksMap().put(vehicle, neighborTasks);
+//        neighborSolution.getTaskPairIndexMap().put(ti, j);
+//        neighborSolution.getTaskPairIndexMap().put(tj, i);
         return neighborSolution;
     }
 }

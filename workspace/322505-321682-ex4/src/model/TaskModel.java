@@ -28,7 +28,7 @@ public class TaskModel {
         return type + ": " + task.toString();
     }
 
-    public double getUpdatedLoad() {
+    public int getUpdatedLoad() {
         return type == TaskTypeEnum.PICKUP ? task.weight : -task.weight;
     }
 
