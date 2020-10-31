@@ -58,6 +58,7 @@ public class SwapTasksOperation extends Operation {
             Topology.City nextCity = newTask.getType().equals(TaskTypeEnum.PICKUP) ?
                     newTask.getTask().pickupCity : newTask.getTask().deliveryCity;
             cost += currentCity.distanceTo(nextCity) * vehicle.costPerKm();
+            currentCity = nextCity;
         }
 
         neighborSolution.getVehicleTasksMap().put(vehicle, neighborTasks);

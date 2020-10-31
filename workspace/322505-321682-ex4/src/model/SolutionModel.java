@@ -46,6 +46,8 @@ public class SolutionModel {
 
                 // update task index map
                 taskPairIndexMap.put(new TaskModel(task.getTask(), task.getPairTaskType()), tasks.indexOf(task));
+
+                currentCity = nextCity;
             }
             System.out.println("pocetni cost: " + cost);
         }
