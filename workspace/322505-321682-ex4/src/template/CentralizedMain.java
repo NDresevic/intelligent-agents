@@ -53,6 +53,7 @@ public class CentralizedMain implements CentralizedBehavior {
 
     @Override
     public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
+        System.out.println(vehicles);
         long startTime = System.currentTimeMillis();
 
         List<TaskModel> taskModelList = new ArrayList<>();
@@ -62,14 +63,14 @@ public class CentralizedMain implements CentralizedBehavior {
         }
         StochasticLocalSearch sls = new StochasticLocalSearch(vehicles, taskModelList,
                 // todo: set time which includes later plan computation
-                System.currentTimeMillis() - startTime, p);
+                planTimeout - (System.currentTimeMillis() - startTime) - 500, p);
 
         sls.SLS();
         SolutionModel solution = sls.getBestSolution();
 
         List<Plan> plans = new ArrayList<>();
         double cost = 0;
-        for (Vehicle vehicle: vehicles) {
+        for (Vehicle vehicle : vehicles) {
             City currentCity = vehicle.getCurrentCity();
             List<TaskModel> taskModels = solution.getVehicleTasksMap().get(vehicle);
             Plan plan = new Plan(currentCity);

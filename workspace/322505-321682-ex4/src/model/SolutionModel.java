@@ -13,11 +13,14 @@ public class SolutionModel {
     // [TaskModel -> index of it's pair]
     // TaskModel-s ti and tj are pairs iff ti = TaskModel(t, PICKUP) and tj = TaskModel(t, DELIVERY)
     private Map<TaskModel, Integer> taskPairIndexMap;
+    // [vehicle -> cost of that vehicle for it's current plan]
+    private Map<Vehicle, Double> vehicleCostMap;
     private double cost;
 
     public SolutionModel(Map<Vehicle, ArrayList<TaskModel>> vehicleTasksMap) {
         this.vehicleTasksMap = vehicleTasksMap;
         this.taskPairIndexMap = new HashMap<>();
+        this.vehicleCostMap = new HashMap<>();
         this.cost = 0.0;
         this.createInitialSolutionParameters();
     }
@@ -25,6 +28,7 @@ public class SolutionModel {
     public SolutionModel(SolutionModel solution) {
         this.vehicleTasksMap = new HashMap<>(solution.vehicleTasksMap);
         this.taskPairIndexMap = new HashMap<>(solution.taskPairIndexMap);
+        this.vehicleCostMap = new HashMap<>(solution.vehicleCostMap);
         this.cost = solution.cost;
     }
 
@@ -38,19 +42,25 @@ public class SolutionModel {
             City currentCity = vehicle.getCurrentCity();
             List<TaskModel> tasks = entry.getValue();
 
+            double vehicleCost = 0.0;
             for (TaskModel task : tasks) {
                 // update cost
                 City nextCity = task.getType().equals(TaskTypeEnum.PICKUP) ?
                         task.getTask().pickupCity : task.getTask().deliveryCity;
-                cost += currentCity.distanceTo(nextCity) * vehicle.costPerKm();
+                vehicleCost += currentCity.distanceTo(nextCity) * vehicle.costPerKm();
 
                 // update task index map
                 taskPairIndexMap.put(new TaskModel(task.getTask(), task.getPairTaskType()), tasks.indexOf(task));
 
                 currentCity = nextCity;
             }
-            System.out.println("pocetni cost: " + cost);
+            vehicleCostMap.put(vehicle, vehicleCost);
+            cost += vehicleCost;
+
+            System.out.println(String.format("Vehicle: %d | Starting cost: %.2f", vehicle.id(),
+                    vehicleCostMap.get(vehicle)));
         }
+        System.out.println();
     }
 
     public Map<Vehicle, ArrayList<TaskModel>> getVehicleTasksMap() {
@@ -59,6 +69,10 @@ public class SolutionModel {
 
     public Map<TaskModel, Integer> getTaskPairIndexMap() {
         return taskPairIndexMap;
+    }
+
+    public Map<Vehicle, Double> getVehicleCostMap() {
+        return vehicleCostMap;
     }
 
     public double getCost() {

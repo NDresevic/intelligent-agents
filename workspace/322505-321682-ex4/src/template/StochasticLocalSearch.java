@@ -9,6 +9,10 @@ import java.util.*;
 
 public class StochasticLocalSearch {
 
+    // used for iteration count of operation swap tasks
+    private static double ALPHA = 1;
+    private static double BETA = 0.4;
+
     private List<Vehicle> vehicleList;
     private List<TaskModel> taskModelList;
     private SolutionModel bestSolution;
@@ -27,42 +31,43 @@ public class StochasticLocalSearch {
         SolutionModel currentSolution = createInitialSolution();
         bestSolution = currentSolution;
 
+        int count = 0;
         while (remainingTime > 0) {
             long loopStartTime = System.currentTimeMillis();
 
-            SolutionModel bestNeighbor = exploreAllNeighborsForRandomVehicle(currentSolution);
+            SolutionModel bestNeighbor = exploreNeighbors(currentSolution);
+            if (bestNeighbor != null) {
+                if (new Random().nextDouble() > p) {
+                    currentSolution = bestNeighbor;
+                }
 
-            System.out.println("best neighbor cost: " + bestNeighbor.getCost());
-
-            if (bestNeighbor != null && new Random().nextDouble() > p) {
-                currentSolution = bestNeighbor;
-            }
-            if (bestNeighbor != null  && bestNeighbor.getCost() < bestSolution.getCost()) {
-                bestSolution = bestNeighbor;
+                bestSolution = bestNeighbor.getCost() < bestSolution.getCost() ? bestNeighbor : bestSolution;
+                if (count % 1000 == 0) {
+                    System.out.println(String.format("Iteration: %d | Best cost: %.2f", count, bestSolution.getCost()));
+                }
+                count++;
             }
 
             remainingTime -= System.currentTimeMillis() - loopStartTime;
         }
     }
 
-    private SolutionModel exploreAllNeighborsForRandomVehicle(SolutionModel currentSolution) {
-        Vehicle vehicle = vehicleList.get(new Random().nextInt(vehicleList.size()));
-        Map<Vehicle, ArrayList<TaskModel>> map = currentSolution.getVehicleTasksMap();
-        int i = new Random().nextInt(map.get(vehicle).size());
-        int j = new Random().nextInt(map.get(vehicle).size());
+    private SolutionModel exploreNeighbors(SolutionModel currentSolution) {
         SolutionModel bestNeighbor = null;
 
-        System.out.println("for v: " + vehicle.id() + " switching tasks " + i + " and " + j);
-        SolutionModel neighbor = new SwapTasksOperation(currentSolution, i, j, vehicle).getNewSolution();
-        if (neighbor != null) {
-            System.out.println("Komsija cost: " + neighbor.getCost());
-//            if (bestNeighbor == null || neighbor.getCost() < bestCost) {
+        int iterCount = (int) ALPHA * vehicleList.size();
+        for (int k = 0; k < iterCount; k++) {
+            Vehicle vehicle = vehicleList.get(new Random().nextInt(vehicleList.size()));
+            Map<Vehicle, ArrayList<TaskModel>> map = currentSolution.getVehicleTasksMap();
+
+            int i = new Random().nextInt(map.get(vehicle).size());
+            int j = new Random().nextInt(map.get(vehicle).size());
+            SolutionModel neighbor = new SwapTasksOperation(currentSolution, i, j, vehicle).getNewSolution();
+            if (neighbor != null &&
+                    (bestNeighbor == null || neighbor.getCost() < bestNeighbor.getCost())) {
                 bestNeighbor = neighbor;
-//            }
-        } else {
-            System.out.println("neighbor je null");
+            }
         }
-        System.out.println("best nb cost: " + bestNeighbor.getCost());
 
         return bestNeighbor;
     }
@@ -70,6 +75,7 @@ public class StochasticLocalSearch {
     private SolutionModel createInitialSolution() {
         Map<Vehicle, ArrayList<TaskModel>> map = new HashMap<>();
 
+        // todo: provera da li je moguca raspodela - ako ne - > dodeljivanje taska bilo kom vozilu !!!
         for (int i = 0; i < taskModelList.size(); i += 2) {
             Vehicle vehicle = vehicleList.get((i / 2) % vehicleList.size());
             if (!map.containsKey(vehicle)) {

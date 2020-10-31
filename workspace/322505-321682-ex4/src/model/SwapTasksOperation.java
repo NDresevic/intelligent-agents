@@ -15,8 +15,8 @@ public class SwapTasksOperation extends Operation {
 
     public SwapTasksOperation(SolutionModel currentSolution, int i, int j, Vehicle vehicle) {
         super(currentSolution, OperationTypeEnum.CHANGE_TASK_ORDER);
-        this.i = i;
-        this.j = j;
+        this.i = Math.min(i, j);
+        this.j = Math.max(i, j);
         this.vehicle = vehicle;
     }
 
@@ -25,11 +25,6 @@ public class SwapTasksOperation extends Operation {
         SolutionModel neighborSolution = new SolutionModel(currentSolution);
         ArrayList<TaskModel> tasks = neighborSolution.getVehicleTasksMap().get(vehicle);
 
-        if (i > j) {
-            int temp = i;
-            i = j;
-            j = temp;
-        }
         TaskModel ti = tasks.get(i);
         TaskModel tj = tasks.get(j);
         if (ti.getType() == TaskTypeEnum.PICKUP && neighborSolution.getTaskPairIndexMap().get(ti) <= j
@@ -40,7 +35,7 @@ public class SwapTasksOperation extends Operation {
         ArrayList<TaskModel> neighborTasks = new ArrayList<>();
 
         int load = 0;
-        double cost = 0d;
+        double vehicleCost = 0d;
 
         Topology.City currentCity = vehicle.getCurrentCity();
         for (int k = 0; k < tasks.size(); k++) {
@@ -62,12 +57,14 @@ public class SwapTasksOperation extends Operation {
 
             Topology.City nextCity = newTask.getType().equals(TaskTypeEnum.PICKUP) ?
                     newTask.getTask().pickupCity : newTask.getTask().deliveryCity;
-            cost += currentCity.distanceTo(nextCity) * vehicle.costPerKm();
+            vehicleCost += currentCity.distanceTo(nextCity) * vehicle.costPerKm();
             currentCity = nextCity;
         }
 
+        double previousVehicleCost = neighborSolution.getVehicleCostMap().get(vehicle);
         neighborSolution.getVehicleTasksMap().put(vehicle, neighborTasks);
-        neighborSolution.setCost(cost);
+        neighborSolution.getVehicleCostMap().put(vehicle, vehicleCost);
+        neighborSolution.setCost(neighborSolution.getCost() - previousVehicleCost + vehicleCost);
 
         return neighborSolution;
     }
