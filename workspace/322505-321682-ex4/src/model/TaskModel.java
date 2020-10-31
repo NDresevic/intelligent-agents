@@ -3,6 +3,8 @@ package model;
 import enums.TaskTypeEnum;
 import logist.task.Task;
 
+import java.util.Objects;
+
 public class TaskModel {
 
     private Task task;
@@ -49,4 +51,8 @@ public class TaskModel {
                 type == taskModel.type;
     }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(task.id, type);
+    }
 }

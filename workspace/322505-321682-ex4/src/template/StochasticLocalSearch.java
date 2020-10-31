@@ -44,6 +44,8 @@ public class StochasticLocalSearch {
 
             SolutionModel bestNeighbor = exploreAllNeighborsForRandomVehicle(currentSolution, bestSolution.getCost());
 
+            System.out.println("best neighbor cost: " + bestNeighbor.getCost());
+
             if (new Random().nextDouble() > p)
                 currentSolution = bestNeighbor;
 
@@ -63,16 +65,18 @@ public class StochasticLocalSearch {
             for (int j = i + 1; j < tasks.size(); j++) {
                 SolutionModel neighbor = new SwapTasksOperation(currentSolution,
                         OperationTypeEnum.CHANGE_TASK_ORDER, i, j, vehicle).getNewSolution();
-                if (neighbor != null) {
-                    if (neighbor.getCost() < bestCost) {
-                        bestSolution = neighbor;
-                    }
-                    if (bestNeighbor == null || neighbor.getCost() < bestCost) {
-                        bestNeighbor = neighbor;
-                    }
-                }
+                if (neighbor == null)
+                    continue;
+
+                System.out.println("Komsija cost: " + neighbor.getCost());
+                if (bestNeighbor == null || neighbor.getCost() < bestNeighbor.getCost())
+                    bestNeighbor = neighbor;
             }
         }
+
+        if(bestNeighbor.getCost() < bestSolution.getCost())
+            bestSolution = bestNeighbor;
+
         return bestNeighbor;
     }
 
@@ -81,7 +85,7 @@ public class StochasticLocalSearch {
         Map<Vehicle, List<TaskModel>> map = new HashMap<>();
 
         for (int i = 0; i < noTaskModel; i += 2) {
-            Vehicle vehicle = vehicleList.get( (i/2) % vehicleList.size());
+            Vehicle vehicle = vehicleList.get((i / 2) % vehicleList.size());
             if (!map.containsKey(vehicle)) {
                 map.put(vehicle, new ArrayList<>());
             }
