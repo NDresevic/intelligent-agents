@@ -25,7 +25,7 @@ public class SwapTasksOperation extends Operation {
     public SolutionModel getNewSolution() {
         SolutionModel neighborSolution = new SolutionModel(currentSolution);
         TaskModel[] tasks = neighborSolution.getVehicleTasksMap().get(vehicle);
-        List<Double> loads = neighborSolution.getVehicleLoad().get(vehicle);
+        double[] loads = neighborSolution.getVehicleLoad().get(vehicle);
 
         TaskModel ti = tasks[i];
         TaskModel tj = tasks[j];
@@ -35,23 +35,23 @@ public class SwapTasksOperation extends Operation {
                 tj.getType() == TaskTypeEnum.DELIVERY && neighborSolution.getTaskPairIndex().get(tj) >= i)
             return null;
 
-        loads.add(j, loads.get(j) + tasks[i].updateLoad());
-        if (loads.get(j) > vehicle.capacity())
-            return null;
-        for (int k = i + 1; k < j; k++) {
-            loads.add(k, loads.get(k) + tasks[k].updateLoad());
-            if (loads.get(k) > vehicle.capacity())
-                return null;
-        }
-        loads.add(j, loads.get(j) + tasks[i].updateLoad());
-        if (loads.get(j) > vehicle.capacity())
-            return null;
-        for (int k = j + 1; k < tasks.length; k++) {
-            loads.add(k, loads.get(k) + tasks[k].updateLoad());
-            if (loads.get(k) > vehicle.capacity())
-                return null;
-        }
-        neighborSolution.getVehicleLoad().put(vehicle, loads);
+//        loads.add(j, loads.get(j) + tasks[i].updateLoad());
+//        if (loads.get(j) > vehicle.capacity())
+//            return null;
+//        for (int k = i + 1; k < j; k++) {
+//            loads.add(k, loads.get(k) + tasks[k].updateLoad());
+//            if (loads.get(k) > vehicle.capacity())
+//                return null;
+//        }
+//        loads.add(j, loads.get(j) + tasks[i].updateLoad());
+//        if (loads.get(j) > vehicle.capacity())
+//            return null;
+//        for (int k = j + 1; k < tasks.length; k++) {
+//            loads.add(k, loads.get(k) + tasks[k].updateLoad());
+//            if (loads.get(k) > vehicle.capacity())
+//                return null;
+//        }
+//        neighborSolution.getVehicleLoad().put(vehicle, loads);
 
         tasks[i] = tj;
         tasks[j] = ti;

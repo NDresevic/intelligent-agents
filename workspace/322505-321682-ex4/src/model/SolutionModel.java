@@ -9,7 +9,7 @@ import java.util.*;
 public class SolutionModel {
 
     private Map<Vehicle, TaskModel[]> vehicleTasksMap;
-    private Map<Vehicle, List<Double>> vehicleLoad;
+    private Map<Vehicle, double[]> vehicleLoad;
     private Map<TaskModel, Integer> taskPairIndex;
     private double cost;
 
@@ -48,12 +48,14 @@ public class SolutionModel {
     private void createVehicleLoad() {
         vehicleLoad = new HashMap<>();
         for (Map.Entry<Vehicle, TaskModel[]> entry : vehicleTasksMap.entrySet()) {
-            ArrayList<Double> loads = new ArrayList<>();
             TaskModel[] tasks = entry.getValue();
+            double[] loads = new double[tasks.length];
+
             double currentLoad = 0;
-            for (TaskModel task : tasks) {
+            for (int i = 0; i < tasks.length; i++) {
+                TaskModel task = tasks[i];
                 currentLoad += task.updateLoad();
-                loads.add(currentLoad);
+                loads[i] = currentLoad;
             }
             vehicleLoad.put(entry.getKey(), loads);
         }
@@ -73,7 +75,7 @@ public class SolutionModel {
         return vehicleTasksMap;
     }
 
-    public Map<Vehicle, List<Double>> getVehicleLoad() {
+    public Map<Vehicle, double[]> getVehicleLoad() {
         return vehicleLoad;
     }
 
