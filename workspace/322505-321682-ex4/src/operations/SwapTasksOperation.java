@@ -3,7 +3,6 @@ package operations;
 import enums.OperationTypeEnum;
 import enums.TaskTypeEnum;
 import logist.simulation.Vehicle;
-import logist.topology.Topology;
 import logist.topology.Topology.City;
 import models.SolutionModel;
 import models.TaskModel;
@@ -25,7 +24,6 @@ public class SwapTasksOperation extends Operation {
 
     @Override
     public SolutionModel getNewSolution() {
-        SolutionModel neighborSolution = new SolutionModel(currentSolution);
         ArrayList<TaskModel> tasks = neighborSolution.getVehicleTasksMap().get(vehicle);
 
         TaskModel ti = tasks.get(i);

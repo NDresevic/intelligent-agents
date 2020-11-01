@@ -2,6 +2,7 @@ package search;
 
 import logist.simulation.Vehicle;
 import models.SolutionModel;
+import operations.ChangeVehicleOperation;
 import operations.SwapTasksOperation;
 import models.TaskModel;
 
@@ -10,7 +11,8 @@ import java.util.*;
 public class StochasticLocalSearch {
 
     // used for iteration count of operation swap tasks
-    private static double ALPHA = 1;
+    private static double ALPHA = 4;
+    // used for iteration count of change task vehicle operation
     private static double BETA = 0.4;
 
     private List<Vehicle> vehicleList;
@@ -54,15 +56,34 @@ public class StochasticLocalSearch {
 
     private SolutionModel exploreNeighbors(SolutionModel currentSolution) {
         SolutionModel bestNeighbor = null;
+        Map<Vehicle, ArrayList<TaskModel>> map = currentSolution.getVehicleTasksMap();
 
-        int iterCount = (int) ALPHA * vehicleList.size();
+        int iterCount = (int) (ALPHA * vehicleList.size());
         for (int k = 0; k < iterCount; k++) {
             Vehicle vehicle = vehicleList.get(new Random().nextInt(vehicleList.size()));
-            Map<Vehicle, ArrayList<TaskModel>> map = currentSolution.getVehicleTasksMap();
+            if (map.get(vehicle).size() < 1) { // continue cause chosen vehicle doesn't have any task
+                continue;
+            }
 
             int i = new Random().nextInt(map.get(vehicle).size());
             int j = new Random().nextInt(map.get(vehicle).size());
             SolutionModel neighbor = new SwapTasksOperation(currentSolution, i, j, vehicle).getNewSolution();
+            if (neighbor != null &&
+                    (bestNeighbor == null || neighbor.getCost() < bestNeighbor.getCost())) {
+                bestNeighbor = neighbor;
+            }
+        }
+
+        iterCount = (int) (BETA * taskModelList.size());
+        for (int k = 0; k < iterCount; k++) {
+            Vehicle v1 = vehicleList.get(new Random().nextInt(vehicleList.size()));
+            Vehicle v2 = vehicleList.get(new Random().nextInt(vehicleList.size()));
+            if (v1.equals(v2) || map.get(v1).size() < 1) {
+                continue;
+            }
+
+            int i = new Random().nextInt(map.get(v1).size());
+            SolutionModel neighbor = new ChangeVehicleOperation(currentSolution, v1, v2, i).getNewSolution();
             if (neighbor != null &&
                     (bestNeighbor == null || neighbor.getCost() < bestNeighbor.getCost())) {
                 bestNeighbor = neighbor;

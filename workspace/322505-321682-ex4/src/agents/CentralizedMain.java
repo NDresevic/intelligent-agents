@@ -100,7 +100,8 @@ public class CentralizedMain implements CentralizedBehavior {
             }
 
             double vehicleCost = plan.totalDistance() * vehicle.costPerKm();
-            System.out.println("Cost for vehicle " + vehicle.id() + ": " + vehicleCost);
+            System.out.println(String.format("Vehicle: %d | Number of tasks: %d | Cost: %.2f",
+                    vehicle.id(), taskModels.size() / 2, vehicleCost));
             cost += vehicleCost;
             plans.add(plan);
             System.out.println(plan);
