@@ -7,7 +7,6 @@ import logist.behavior.CentralizedBehavior;
 import logist.config.Parsers;
 import logist.plan.Plan;
 import logist.simulation.Vehicle;
-import logist.task.Task;
 import logist.task.TaskDistribution;
 import logist.task.TaskSet;
 import logist.topology.Topology;
@@ -17,8 +16,9 @@ import models.TaskModel;
 import search.StochasticLocalSearch;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+
+import static java.util.stream.Collectors.groupingBy;
 
 public class CentralizedMain implements CentralizedBehavior {
 
@@ -28,6 +28,7 @@ public class CentralizedMain implements CentralizedBehavior {
     private double p;
     private long setupTimeout;
     private long planTimeout;
+    private Map<City, Vehicle> closestBigVehicle;
 
     @Override
     public void setup(Topology topology, TaskDistribution distribution, Agent agent) {
@@ -35,6 +36,7 @@ public class CentralizedMain implements CentralizedBehavior {
         this.distribution = distribution;
         this.agent = agent;
         this.p = p;
+        this.closestBigVehicle = new HashMap<>();
 
         // this code is used to get the timeouts
         try {
@@ -49,6 +51,23 @@ public class CentralizedMain implements CentralizedBehavior {
         }
 
         this.p = agent.readProperty("p", Double.class, 0.4);
+
+        Map<City, List<Vehicle>> homeTowns = agent.vehicles().stream()
+                .collect(groupingBy(Vehicle::homeCity));
+        Map<City, Vehicle> bestVehicleForHomeTown = new HashMap<>();
+        for (Map.Entry<City, List<Vehicle>> entry : homeTowns.entrySet()) {
+            List<Vehicle> vehicles = entry.getValue();
+            vehicles.sort(Comparator.comparingInt(Vehicle::capacity));
+            bestVehicleForHomeTown.put(entry.getKey(), vehicles.get(0));
+        }
+
+        for (City city : topology.cities()) {
+            closestBigVehicle.putIfAbsent(city, agent.vehicles().get(0));
+            for (Map.Entry<City, Vehicle> entry : bestVehicleForHomeTown.entrySet()) {
+                if (city.distanceTo(entry.getKey()) < city.distanceTo(closestBigVehicle.get(city).homeCity()))
+                    closestBigVehicle.put(city, entry.getValue());
+            }
+        }
     }
 
     @Override
@@ -56,14 +75,9 @@ public class CentralizedMain implements CentralizedBehavior {
         System.out.println(vehicles);
         long startTime = System.currentTimeMillis();
 
-        List<TaskModel> taskModelList = new ArrayList<>();
-        for (Task task : tasks) {
-            taskModelList.add(new TaskModel(task, TaskTypeEnum.PICKUP));
-            taskModelList.add(new TaskModel(task, TaskTypeEnum.DELIVERY));
-        }
-        StochasticLocalSearch sls = new StochasticLocalSearch(vehicles, taskModelList,
+        StochasticLocalSearch sls = new StochasticLocalSearch(vehicles, tasks,
                 // todo: set time which includes later plan computation
-                planTimeout - (System.currentTimeMillis() - startTime) - 500, p);
+                planTimeout - (System.currentTimeMillis() - startTime) - 500, p, closestBigVehicle);
 
         sls.SLS();
         SolutionModel solution = sls.getBestSolution();

@@ -1,10 +1,14 @@
 package search;
 
+import enums.TaskTypeEnum;
 import logist.simulation.Vehicle;
+import logist.task.Task;
+import logist.task.TaskSet;
+import logist.topology.Topology.City;
 import models.SolutionModel;
+import models.TaskModel;
 import operations.ChangeVehicleOperation;
 import operations.SwapTasksOperation;
-import models.TaskModel;
 
 import java.util.*;
 
@@ -17,20 +21,36 @@ public class StochasticLocalSearch {
 
     private List<Vehicle> vehicleList;
     private List<TaskModel> taskModelList;
+    private TaskSet tasks;
     private SolutionModel bestSolution;
     private long remainingTime;
     private double p;
+    private Map<City, Vehicle> closestBigVehicle;
 
-    public StochasticLocalSearch(List<Vehicle> vehicleList, List<TaskModel> taskModelList,
-                                 long remainingTime, double p) {
+    public StochasticLocalSearch(List<Vehicle> vehicleList, TaskSet tasks,
+                                 long remainingTime, double p, Map<City, Vehicle> closestBigVehicle) {
         this.vehicleList = vehicleList;
-        this.taskModelList = taskModelList;
+        //makeTaskModelList(tasks);
+        this.taskModelList = new ArrayList<>();
+        this.tasks = tasks;
         this.remainingTime = remainingTime;
         this.p = p;
+        this.closestBigVehicle = closestBigVehicle;
     }
 
+//    private void makeTaskModelList(TaskSet tasks) {
+//        taskModelList = new ArrayList<>();
+//        for (Task task : tasks) {
+//            taskModelList.add(new TaskModel(task, TaskTypeEnum.PICKUP));
+//            taskModelList.add(new TaskModel(task, TaskTypeEnum.DELIVERY));
+//        }
+//    }
+
+
     public void SLS() {
-        SolutionModel currentSolution = createInitialSolution();
+        //SolutionModel currentSolution = createInitialSolution();
+        SolutionModel currentSolution = createSmartInitialSolution();
+        //double tmpCost = currentSolution.getCost();
         bestSolution = currentSolution;
 
         int count = 0;
@@ -45,8 +65,20 @@ public class StochasticLocalSearch {
 
                 bestSolution = bestNeighbor.getCost() < bestSolution.getCost() ? bestNeighbor : bestSolution;
                 if (count % 1000 == 0) {
-                    System.out.println(String.format("Iteration: %d | Best cost: %.2f", count, bestSolution.getCost()));
+                    System.out.println(String.format("Iteration: %d | Best cost: %.2f | Current cost: %.2f"
+                            , count, bestSolution.getCost(), currentSolution.getCost()));
                 }
+//                if (count % 10000 == 0) {
+//                    if(tmpCost != bestSolution.getCost()) {
+//                        tmpCost = bestSolution.getCost();
+//                    }
+//                    else {
+//                        ALPHA /= 2;
+//                        BETA *= 2;
+//                        System.out.println(ALPHA);
+//                        System.out.println(BETA);
+//                    }
+//                }
                 count++;
             }
 
@@ -106,6 +138,63 @@ public class StochasticLocalSearch {
             ArrayList<TaskModel> currentTasks = map.get(vehicle);
             currentTasks.add(taskModelList.get(i));
             currentTasks.add(taskModelList.get(i + 1));
+            map.put(vehicle, currentTasks);
+        }
+
+        return new SolutionModel(map);
+    }
+
+    private SolutionModel createSmartInitialSolution() {
+        Map<Vehicle, ArrayList<TaskModel>> map = new HashMap<>();
+        Map<Vehicle, ArrayList<TaskModel>> deliveryAppendix = new HashMap<>();
+        Map<Vehicle, Double> vehicleLoad = new HashMap<>();
+        Set<Task> notAssignedTasks = new HashSet<>();
+
+        for (Vehicle vehicle : vehicleList) {
+            vehicleLoad.put(vehicle, 0d);
+            map.put(vehicle, new ArrayList<>());
+            deliveryAppendix.put(vehicle, new ArrayList<>());
+        }
+        for (Task task : tasks) {
+            Vehicle suboptimalVehicle = closestBigVehicle.get(task.pickupCity);
+            double toBeWeight = vehicleLoad.get(suboptimalVehicle) + task.weight;
+            if (toBeWeight <= suboptimalVehicle.capacity()) {
+                ArrayList<TaskModel> currentTasks = map.get(suboptimalVehicle);
+                TaskModel taskModelPickup = new TaskModel(task, TaskTypeEnum.PICKUP);
+                currentTasks.add(taskModelPickup);
+                taskModelList.add(taskModelPickup);
+                map.put(suboptimalVehicle, currentTasks);
+
+                ArrayList<TaskModel> toBeAddedTasks = deliveryAppendix.get(suboptimalVehicle);
+                TaskModel taskModelDelivery = new TaskModel(task, TaskTypeEnum.DELIVERY);
+                toBeAddedTasks.add(taskModelDelivery);
+                taskModelList.add(taskModelDelivery);
+                deliveryAppendix.put(suboptimalVehicle, toBeAddedTasks);
+
+                vehicleLoad.put(suboptimalVehicle, toBeWeight);
+            } else {
+                notAssignedTasks.add(task);
+            }
+        }
+
+        for (Map.Entry<Vehicle, ArrayList<TaskModel>> entry : map.entrySet()) {
+            ArrayList<TaskModel> currentTasks = entry.getValue();
+            currentTasks.addAll(deliveryAppendix.get(entry.getKey()));
+            map.put(entry.getKey(), currentTasks);
+        }
+
+        for (Task task : notAssignedTasks) {
+            Vehicle vehicle = vehicleList.get(new Random().nextInt(vehicleList.size()));
+            ArrayList<TaskModel> currentTasks = map.get(vehicle);
+
+            TaskModel taskModelPickup = new TaskModel(task, TaskTypeEnum.PICKUP);
+            currentTasks.add(taskModelPickup);
+            taskModelList.add(taskModelPickup);
+
+            TaskModel taskModelDelivery = new TaskModel(task, TaskTypeEnum.DELIVERY);
+            currentTasks.add(taskModelDelivery);
+            taskModelList.add(taskModelDelivery);
+
             map.put(vehicle, currentTasks);
         }
 
