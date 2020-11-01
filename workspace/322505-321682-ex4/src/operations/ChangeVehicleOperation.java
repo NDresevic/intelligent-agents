@@ -1,8 +1,9 @@
-package model;
+package operations;
 
 import enums.OperationTypeEnum;
 import logist.simulation.Vehicle;
 import logist.task.Task;
+import models.SolutionModel;
 
 public class ChangeVehicleOperation extends Operation {
 

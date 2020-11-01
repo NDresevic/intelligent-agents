@@ -1,4 +1,4 @@
-package model;
+package models;
 
 import enums.TaskTypeEnum;
 import logist.task.Task;

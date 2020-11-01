@@ -6,12 +6,12 @@
 	<!-- #### CENTRALIZED AGENTS ### -->
 	<agent name="centralized-random">
 		<set class-path="bin/"/>
-		<set class-name="template.CentralizedTemplate"/>
+		<set class-name="agents.CentralizedTemplate"/>
 	</agent>
 
 	<agent name="centralized-main">
 		<set class-path="bin/"/>
-		<set class-name="template.CentralizedMain"/>
+		<set class-name="agents.CentralizedMain"/>
 		<set p="0"/>
 	</agent>
 	

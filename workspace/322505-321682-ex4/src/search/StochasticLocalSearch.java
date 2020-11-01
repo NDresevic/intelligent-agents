@@ -1,9 +1,9 @@
-package template;
+package search;
 
 import logist.simulation.Vehicle;
-import model.SolutionModel;
-import model.SwapTasksOperation;
-import model.TaskModel;
+import models.SolutionModel;
+import operations.SwapTasksOperation;
+import models.TaskModel;
 
 import java.util.*;
 

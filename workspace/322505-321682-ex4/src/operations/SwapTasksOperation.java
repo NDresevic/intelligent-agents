@@ -1,9 +1,12 @@
-package model;
+package operations;
 
 import enums.OperationTypeEnum;
 import enums.TaskTypeEnum;
 import logist.simulation.Vehicle;
 import logist.topology.Topology;
+import logist.topology.Topology.City;
+import models.SolutionModel;
+import models.TaskModel;
 
 import java.util.ArrayList;
 
@@ -27,35 +30,39 @@ public class SwapTasksOperation extends Operation {
 
         TaskModel ti = tasks.get(i);
         TaskModel tj = tasks.get(j);
-        if (ti.getType() == TaskTypeEnum.PICKUP && neighborSolution.getTaskPairIndexMap().get(ti) <= j
-                ||
-                tj.getType() == TaskTypeEnum.DELIVERY && neighborSolution.getTaskPairIndexMap().get(tj) >= i)
+        // return null if it is not possible to change order of the tasks (for example: ti delivery is before ti pickup)
+        if ((ti.getType() == TaskTypeEnum.PICKUP && neighborSolution.getTaskPairIndexMap().get(ti) <= j)
+                || (tj.getType() == TaskTypeEnum.DELIVERY && neighborSolution.getTaskPairIndexMap().get(tj) >= i)) {
             return null;
+        }
 
+        City currentCity = vehicle.getCurrentCity();
         ArrayList<TaskModel> neighborTasks = new ArrayList<>();
-
         int load = 0;
         double vehicleCost = 0d;
 
-        Topology.City currentCity = vehicle.getCurrentCity();
         for (int k = 0; k < tasks.size(); k++) {
             TaskModel task = tasks.get(k);
             TaskModel newTask;
+
             if (k != i && k != j) {
                 newTask = task;
             } else if (k == i) {
                 newTask = tasks.get(j);
                 neighborSolution.getTaskPairIndexMap().put(new TaskModel(newTask.getTask(), newTask.getPairTaskType()), i);
-            } else { //k==j
+            } else { // k==j
                 newTask = tasks.get(i);
                 neighborSolution.getTaskPairIndexMap().put(new TaskModel(newTask.getTask(), newTask.getPairTaskType()), j);
             }
             load = load + newTask.getUpdatedLoad();
             neighborTasks.add(newTask);
-            if (load > vehicle.capacity())
-                return null;
 
-            Topology.City nextCity = newTask.getType().equals(TaskTypeEnum.PICKUP) ?
+            // return null if the plan is not valid because load is bigger than capacity
+            if (load > vehicle.capacity()) {
+                return null;
+            }
+
+            City nextCity = newTask.getType().equals(TaskTypeEnum.PICKUP) ?
                     newTask.getTask().pickupCity : newTask.getTask().deliveryCity;
             vehicleCost += currentCity.distanceTo(nextCity) * vehicle.costPerKm();
             currentCity = nextCity;

@@ -1,4 +1,4 @@
-package model;
+package models;
 
 import enums.TaskTypeEnum;
 import logist.simulation.Vehicle;
@@ -15,6 +15,7 @@ public class SolutionModel {
     private Map<TaskModel, Integer> taskPairIndexMap;
     // [vehicle -> cost of that vehicle for it's current plan]
     private Map<Vehicle, Double> vehicleCostMap;
+    // cost of the whole solution
     private double cost;
 
     public SolutionModel(Map<Vehicle, ArrayList<TaskModel>> vehicleTasksMap) {

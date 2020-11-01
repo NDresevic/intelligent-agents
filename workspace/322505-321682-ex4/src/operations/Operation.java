@@ -1,6 +1,7 @@
-package model;
+package operations;
 
 import enums.OperationTypeEnum;
+import models.SolutionModel;
 
 public abstract class Operation {
 

@@ -1,4 +1,4 @@
-package template;
+package agents;
 
 import enums.TaskTypeEnum;
 import logist.LogistSettings;
@@ -12,13 +12,13 @@ import logist.task.TaskDistribution;
 import logist.task.TaskSet;
 import logist.topology.Topology;
 import logist.topology.Topology.City;
-import model.SolutionModel;
-import model.TaskModel;
+import models.SolutionModel;
+import models.TaskModel;
+import search.StochasticLocalSearch;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class CentralizedMain implements CentralizedBehavior {
 
