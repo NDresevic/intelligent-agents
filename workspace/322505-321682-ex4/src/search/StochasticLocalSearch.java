@@ -18,22 +18,22 @@ public class StochasticLocalSearch {
     private final double ALPHA;
     // used for iteration count of change task vehicle operation
     private final double BETA;
-
+    private final double p;
+    // any city maps to the closest vehicle (based on vehicle home town)
+    private final Map<City, Vehicle> closestBigVehicle;
+    // vehicles sorted by capacity
+    private final List<Vehicle> sortedVehicles;
+    // the name of the method that will be used for initial solution
+    private final String initialSolutionName;
     private final List<Vehicle> vehicleList;
     private final TaskSet tasks;
+
     private SolutionModel bestSolution;
     private long remainingTime;
-    private final double p;
-    //any city maps to the closest vehicle (based on vehicle home town)
-    private final Map<City, Vehicle> closestBigVehicle;
-    //vehicles sorted by capacity
-    private final List<Vehicle> biggestVehicles;
-    //the name of the method that will be used for initial solution
-    private final String initialSolutionName;
 
     public StochasticLocalSearch(List<Vehicle> vehicleList, TaskSet tasks,
                                  long remainingTime, double p, double alpha, double beta, String initialSolutionName,
-                                 Map<City, Vehicle> closestBigVehicle, List<Vehicle> biggestVehicles) {
+                                 Map<City, Vehicle> closestBigVehicle, List<Vehicle> sortedVehicles) {
         this.vehicleList = vehicleList;
         this.tasks = tasks;
         this.remainingTime = remainingTime;
@@ -42,9 +42,8 @@ public class StochasticLocalSearch {
         this.BETA = beta;
         this.initialSolutionName = initialSolutionName;
         this.closestBigVehicle = closestBigVehicle;
-        this.biggestVehicles = biggestVehicles;
+        this.sortedVehicles = sortedVehicles;
     }
-
 
     public void SLS() {
         SolutionModel currentSolution = createInitialSolution();
@@ -74,71 +73,56 @@ public class StochasticLocalSearch {
         }
     }
 
-
     /**
-     * invoking the proper method for initial solution
-     * @return
+     * Invoking the proper method for initial solution.
+     *
+     * @return initial solution
      */
     private SolutionModel createInitialSolution() {
-        SolutionModel initialSolution;
-        if (initialSolutionName.equalsIgnoreCase("fairBasedOnHomeCity"))
-            initialSolution = fairBasedOnHomeCity();
-        else if (initialSolutionName.equalsIgnoreCase("allTasksToBiggestVehicle"))
-            initialSolution = allTasksToBiggestVehicle();
-        else if (initialSolutionName.equalsIgnoreCase("giveToBiggestVehiclesFirst"))
-            initialSolution = giveToBiggestVehiclesFirst();
-        else{
-            System.err.println("Initial solution not supported");
-            initialSolution = null;
+        switch (initialSolutionName) {
+            case "fairBasedOnHomeCity":
+                return fairBasedOnHomeCity();
+            case "allTasksToBiggestVehicle":
+                return allTasksToBiggestVehicle();
+            case "giveToBiggestVehiclesFirst":
+                return giveToBiggestVehiclesFirst();
         }
-        return initialSolution;
+        return allTasksToBiggestVehicle();
     }
-
 
     private SolutionModel chooseNeighbors(SolutionModel currentSolution) {
         Map<Vehicle, ArrayList<TaskModel>> map = currentSolution.getVehicleTasksMap();
 
-        //the neighbors of the current solution that have the same
-        // cost as the best neighbor of the current solution
+        // the neighbors of the current solution that have the same cost as the best neighbor of the current solution
         List<SolutionModel> currentBestNeighbors = new ArrayList<>();
         double bestNeighborCost = Double.MAX_VALUE;
+        int alphaIterCount = (int) (ALPHA * vehicleList.size());
+        int betaIterCount = (int) (BETA * 2 * tasks.size());
 
-        // one iteration:
-        //swap two tasks for a vehicle
-        int iterCount = (int) (ALPHA * vehicleList.size());
-        for (int k = 0; k < iterCount; k++) {
-            Vehicle vehicle = vehicleList.get(new Random().nextInt(vehicleList.size()));
-            if (map.get(vehicle).size() < 1) { // continue cause chosen vehicle doesn't have any task
-                continue;
-            }
-
-            int i = new Random().nextInt(map.get(vehicle).size());
-            int j = new Random().nextInt(map.get(vehicle).size());
-            SolutionModel neighbor = new SwapTasksOperation(currentSolution, i, j, vehicle).getNewSolution();
-
-            if (neighbor != null) {
-                if (currentBestNeighbors.isEmpty() || neighbor.getCost() < bestNeighborCost) {
-                    bestNeighborCost = neighbor.getCost();
-                    currentBestNeighbors = new ArrayList<>();
-                    currentBestNeighbors.add(neighbor);
-                } else if (neighbor.getCost() == bestNeighborCost) {
-                    currentBestNeighbors.add(neighbor);
-                }
-            }
-        }
-
-        //one iteration:
-        // give a random task of a random vehicle to other random vehicle (append to the end of its plan)
-        iterCount = (int) (BETA * 2 * tasks.size());
-        for (int k = 0; k < iterCount; k++) {
+        SolutionModel neighbor;
+        for (int k = 0; k < alphaIterCount + betaIterCount; k++) {
             Vehicle v1 = vehicleList.get(new Random().nextInt(vehicleList.size()));
-            Vehicle v2 = vehicleList.get(new Random().nextInt(vehicleList.size()));
-            if (v1.equals(v2) || map.get(v1).size() < 1) {
-                continue;
-            }
 
-            int i = new Random().nextInt(map.get(v1).size());
-            SolutionModel neighbor = new ChangeVehicleOperation(currentSolution, v1, v2, i).getNewSolution();
+            // swap two tasks for a vehicle
+            if (k < alphaIterCount) {
+                if (map.get(v1).size() < 1) { // continue cause chosen vehicle doesn't have any task
+                    continue;
+                }
+
+                int i = new Random().nextInt(map.get(v1).size());
+                int j = new Random().nextInt(map.get(v1).size());
+                neighbor = new SwapTasksOperation(currentSolution, i, j, v1).getNewSolution();
+            }
+            // give a random task of a random vehicle to other random vehicle (append to the end of its plan)
+            else {
+                Vehicle v2 = vehicleList.get(new Random().nextInt(vehicleList.size()));
+                if (v1.equals(v2) || map.get(v1).size() < 1) {
+                    continue;
+                }
+
+                int i = new Random().nextInt(map.get(v1).size());
+                neighbor = new ChangeVehicleOperation(currentSolution, v1, v2, i).getNewSolution();
+            }
 
             if (neighbor != null) {
                 if (currentBestNeighbors.isEmpty() || neighbor.getCost() < bestNeighborCost) {
@@ -151,7 +135,7 @@ public class StochasticLocalSearch {
             }
         }
 
-        //choose random best neighbor
+        // choose random best neighbor
         if (!currentBestNeighbors.isEmpty())
             return currentBestNeighbors.get(new Random().nextInt(currentBestNeighbors.size()));
         return null;
@@ -230,24 +214,21 @@ public class StochasticLocalSearch {
         return new SolutionModel(map);
     }
 
-
     /**
-     * Assign all tasks to the biggest vehicle
-     * for each task the biggest vehicle does the pickup and then the delivery
-     * and then it process the next task
+     * Assign all tasks to the biggest vehicle. For each task the biggest vehicle does the pickup and then the delivery
+     * and then it process the next task.
      *
      * @return
      */
     private SolutionModel allTasksToBiggestVehicle() {
         Map<Vehicle, ArrayList<TaskModel>> map = new HashMap<>();
-
         for (Vehicle vehicle : vehicleList) {
             map.put(vehicle, new ArrayList<>());
         }
 
-        //biggestVehicles contain sorted vehicles (by capacity and cost)
-        Vehicle biggestVehicle = biggestVehicles.get(0);
-        ArrayList<TaskModel> currentTasks = map.get(biggestVehicle);
+        // biggestVehicles contain sorted vehicles (by capacity and cost)
+        Vehicle biggestVehicle = sortedVehicles.get(0);
+        ArrayList<TaskModel> currentTasks = new ArrayList<>();
         for (Task task : tasks) {
             TaskModel taskModelPickup = new TaskModel(task, TaskTypeEnum.PICKUP);
             currentTasks.add(taskModelPickup);
@@ -266,34 +247,33 @@ public class StochasticLocalSearch {
         Set<Task> notAssignedTasks = new HashSet<>(tasks);
         Set<Task> assignedTasks = new HashSet<>();
 
-        //maps init
+        // maps init
         for (Vehicle vehicle : vehicleList) {
             vehicleLoad.put(vehicle, 0d);
             map.put(vehicle, new ArrayList<>());
             deliveryAppendix.put(vehicle, new ArrayList<>());
         }
 
-
-        for (Vehicle vehicle : biggestVehicles) {
+        for (Vehicle vehicle : sortedVehicles) {
             for (Task task : notAssignedTasks) {
-                if (!assignedTasks.contains(task)) {
-                    double toBeWeight = vehicleLoad.get(vehicle) + task.weight;
-                    if (toBeWeight <= vehicle.capacity()) {
-                        ArrayList<TaskModel> currentTasks = map.get(vehicle);
-
-                        TaskModel taskModelPickup = new TaskModel(task, TaskTypeEnum.PICKUP);
-                        currentTasks.add(taskModelPickup);
-                        map.put(vehicle, currentTasks);
-
-                        ArrayList<TaskModel> toBeAddedTasks = deliveryAppendix.get(vehicle);
-                        TaskModel taskModelDelivery = new TaskModel(task, TaskTypeEnum.DELIVERY);
-                        toBeAddedTasks.add(taskModelDelivery);
-
-                        deliveryAppendix.put(vehicle, toBeAddedTasks);
-                        vehicleLoad.put(vehicle, toBeWeight);
-                        assignedTasks.add(task);
-                    }
+                double toBeWeight = vehicleLoad.get(vehicle) + task.weight;
+                if (assignedTasks.contains(task) || toBeWeight > vehicle.capacity()) {
+                    continue;
                 }
+
+                ArrayList<TaskModel> currentTasks = map.get(vehicle);
+
+                TaskModel taskModelPickup = new TaskModel(task, TaskTypeEnum.PICKUP);
+                currentTasks.add(taskModelPickup);
+                map.put(vehicle, currentTasks);
+
+                ArrayList<TaskModel> toBeAddedTasks = deliveryAppendix.get(vehicle);
+                TaskModel taskModelDelivery = new TaskModel(task, TaskTypeEnum.DELIVERY);
+                toBeAddedTasks.add(taskModelDelivery);
+
+                deliveryAppendix.put(vehicle, toBeAddedTasks);
+                vehicleLoad.put(vehicle, toBeWeight);
+                assignedTasks.add(task);
             }
         }
 

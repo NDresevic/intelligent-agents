@@ -34,8 +34,8 @@ public class SolutionModel {
     }
 
     /**
-     * Method that initializes for first solution cost and creates a mapping for each task index of it's corresponding
-     * pair.
+     * Method that initializes for first solution cost for each vehicle, total cost and creates a mapping for each task
+     * index of it's corresponding pair.
      */
     private void createInitialSolutionParameters() {
         for (Map.Entry<Vehicle, ArrayList<TaskModel>> entry : vehicleTasksMap.entrySet()) {
@@ -43,16 +43,15 @@ public class SolutionModel {
             City currentCity = vehicle.getCurrentCity();
             List<TaskModel> tasks = entry.getValue();
 
-            double vehicleCost = 0.0;
+            double vehicleCost = 0;
             for (TaskModel task : tasks) {
+                // update task index map
+                taskPairIndexMap.put(new TaskModel(task.getTask(), task.getPairTaskType()), tasks.indexOf(task));
+
                 // update cost
                 City nextCity = task.getType().equals(TaskTypeEnum.PICKUP) ?
                         task.getTask().pickupCity : task.getTask().deliveryCity;
                 vehicleCost += currentCity.distanceTo(nextCity) * vehicle.costPerKm();
-
-                // update task index map
-                taskPairIndexMap.put(new TaskModel(task.getTask(), task.getPairTaskType()), tasks.indexOf(task));
-
                 currentCity = nextCity;
             }
             vehicleCostMap.put(vehicle, vehicleCost);

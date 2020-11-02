@@ -11,15 +11,15 @@ import java.util.ArrayList;
 
 public class SwapTasksOperation extends Operation {
 
-    private int i; //first task index in vehicle's list to be swapped
-    private int j; //second task index in vehicle's list to be swapped
     private Vehicle vehicle;
+    private int i; // first task index in vehicle's list to be swapped
+    private int j; // second task index in vehicle's list to be swapped
 
     public SwapTasksOperation(SolutionModel currentSolution, int i, int j, Vehicle vehicle) {
         super(currentSolution, OperationTypeEnum.CHANGE_TASK_ORDER);
+        this.vehicle = vehicle;
         this.i = Math.min(i, j);
         this.j = Math.max(i, j);
-        this.vehicle = vehicle;
     }
 
     @Override
@@ -41,18 +41,16 @@ public class SwapTasksOperation extends Operation {
 
         for (int k = 0; k < tasks.size(); k++) {
             TaskModel task = tasks.get(k);
-            TaskModel newTask;
+            TaskModel newTask = task;
 
-            if (k != i && k != j) {
-                newTask = task;
-            } else if (k == i) {
+            if (k == i) {
                 newTask = tasks.get(j);
                 neighborSolution.getTaskPairIndexMap().put(new TaskModel(newTask.getTask(), newTask.getPairTaskType()), i);
-            } else { // k==j
+            } else if (k == j){
                 newTask = tasks.get(i);
                 neighborSolution.getTaskPairIndexMap().put(new TaskModel(newTask.getTask(), newTask.getPairTaskType()), j);
             }
-            load = load + newTask.getUpdatedLoad();
+            load += newTask.getUpdatedLoad();
             neighborTasks.add(newTask);
 
             // return null if the plan is not valid because load is bigger than capacity
@@ -65,9 +63,9 @@ public class SwapTasksOperation extends Operation {
             vehicleCost += currentCity.distanceTo(nextCity) * vehicle.costPerKm();
             currentCity = nextCity;
         }
+        neighborSolution.getVehicleTasksMap().put(vehicle, neighborTasks);
 
         double previousVehicleCost = neighborSolution.getVehicleCostMap().get(vehicle);
-        neighborSolution.getVehicleTasksMap().put(vehicle, neighborTasks);
         neighborSolution.getVehicleCostMap().put(vehicle, vehicleCost);
         neighborSolution.setCost(neighborSolution.getCost() - previousVehicleCost + vehicleCost);
 
