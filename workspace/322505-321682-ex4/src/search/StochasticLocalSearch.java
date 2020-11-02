@@ -10,8 +10,6 @@ import models.TaskModel;
 import operations.ChangeVehicleOperation;
 import operations.SwapTasksOperation;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.*;
 
 public class StochasticLocalSearch {
@@ -82,14 +80,18 @@ public class StochasticLocalSearch {
      * @return
      */
     private SolutionModel createInitialSolution() {
-        SolutionModel solution = null;
-        try {
-            Method method = this.getClass().getDeclaredMethod(initialSolutionName);
-            solution = (SolutionModel) method.invoke(this);
-        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-            e.printStackTrace();
+        SolutionModel initialSolution;
+        if (initialSolutionName.equalsIgnoreCase("fairBasedOnHomeCity"))
+            initialSolution = fairBasedOnHomeCity();
+        else if (initialSolutionName.equalsIgnoreCase("allTasksToBiggestVehicle"))
+            initialSolution = allTasksToBiggestVehicle();
+        else if (initialSolutionName.equalsIgnoreCase("giveToBiggestVehiclesFirst"))
+            initialSolution = giveToBiggestVehiclesFirst();
+        else{
+            System.err.println("Initial solution not supported");
+            initialSolution = null;
         }
-        return solution;
+        return initialSolution;
     }
 
 
@@ -257,7 +259,7 @@ public class StochasticLocalSearch {
         return new SolutionModel(map);
     }
 
-    private SolutionModel createInitialGiveAll() {
+    private SolutionModel giveToBiggestVehiclesFirst() {
         Map<Vehicle, ArrayList<TaskModel>> map = new HashMap<>();
         Map<Vehicle, ArrayList<TaskModel>> deliveryAppendix = new HashMap<>();
         Map<Vehicle, Double> vehicleLoad = new HashMap<>();
@@ -323,5 +325,7 @@ public class StochasticLocalSearch {
         return new SolutionModel(map);
     }
 
-    public SolutionModel getBestSolution() { return bestSolution; }
+    public SolutionModel getBestSolution() {
+        return bestSolution;
+    }
 }
