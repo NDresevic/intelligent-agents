@@ -29,6 +29,10 @@ public class CentralizedMain implements CentralizedBehavior {
     private long setupTimeout;
     private long planTimeout;
     private Map<City, Vehicle> closestBigVehicle;
+    private List<Vehicle> biggestVehicles;
+    private Double alpha;
+    private Double beta;
+    private String initialSolutionName;
 
     @Override
     public void setup(Topology topology, TaskDistribution distribution, Agent agent) {
@@ -37,6 +41,8 @@ public class CentralizedMain implements CentralizedBehavior {
         this.agent = agent;
         this.p = p;
         this.closestBigVehicle = new HashMap<>();
+        this.biggestVehicles = new ArrayList<>();
+
 
         // this code is used to get the timeouts
         try {
@@ -50,10 +56,25 @@ public class CentralizedMain implements CentralizedBehavior {
             System.out.println("There was a problem loading the configuration file.");
         }
 
+        //loading model parameters
         this.p = agent.readProperty("p", Double.class, 0.4);
+        this.alpha = agent.readProperty("alpha", Double.class, 4.0);
+        this.beta = agent.readProperty("beta", Double.class, 0.4);
+        this.initialSolutionName = agent.readProperty("initialSolution", String.class, "FairBasedOnHomeCity");
 
+
+        //50 was approoximated (for 250 agents and 1m tasks preprocessing lasts for approx 20ms)
+        if (setupTimeout > 50)
+            topologyPreprocessing();
+    }
+
+    private void topologyPreprocessing() {
+        //grouping vehicles by home towns
         Map<City, List<Vehicle>> homeTowns = agent.vehicles().stream()
                 .collect(groupingBy(Vehicle::homeCity));
+
+        //choosing which vehicle is the best for a given home town
+        //if two have the same home town, a vehicle with bigger capacity has an advantage
         Map<City, Vehicle> bestVehicleForHomeTown = new HashMap<>();
         for (Map.Entry<City, List<Vehicle>> entry : homeTowns.entrySet()) {
             List<Vehicle> vehicles = entry.getValue();
@@ -61,6 +82,7 @@ public class CentralizedMain implements CentralizedBehavior {
             bestVehicleForHomeTown.put(entry.getKey(), vehicles.get(0));
         }
 
+        //choosing which vehicle is the best option for a given city
         for (City city : topology.cities()) {
             closestBigVehicle.putIfAbsent(city, agent.vehicles().get(0));
             for (Map.Entry<City, Vehicle> entry : bestVehicleForHomeTown.entrySet()) {
@@ -68,6 +90,16 @@ public class CentralizedMain implements CentralizedBehavior {
                     closestBigVehicle.put(city, entry.getValue());
             }
         }
+
+        //sort vehicle by capacity (if equal, give priority to the vehicle with smaller cost)
+        biggestVehicles = new ArrayList<>(agent.vehicles());
+        Collections.sort(biggestVehicles, (v1, v2) -> {
+                    if (v1.capacity() == v2.capacity())
+                        return v2.costPerKm() - v1.costPerKm();
+                    else
+                        return v1.capacity() - v2.capacity();
+                }
+        );
     }
 
     @Override
@@ -77,7 +109,9 @@ public class CentralizedMain implements CentralizedBehavior {
 
         StochasticLocalSearch sls = new StochasticLocalSearch(vehicles, tasks,
                 // todo: set time which includes later plan computation
-                planTimeout - (System.currentTimeMillis() - startTime) - 500, p, closestBigVehicle);
+                planTimeout - (System.currentTimeMillis() - startTime) - 500,
+                p, alpha, beta, initialSolutionName,
+                closestBigVehicle, biggestVehicles);
 
         sls.SLS();
         SolutionModel solution = sls.getBestSolution();

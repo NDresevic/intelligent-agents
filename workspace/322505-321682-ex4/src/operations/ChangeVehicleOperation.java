@@ -77,6 +77,9 @@ public class ChangeVehicleOperation extends Operation {
             additionalDistance += newV2Tasks.get(newV2Tasks.size() - 2).getTask().deliveryCity.
                     distanceTo(ti.getTask().pickupCity);
         }
+        else{ //FIXME this is added, is this a bug
+            additionalDistance += v2.getCurrentCity().distanceTo(ti.getTask().pickupCity);
+        }
         double v2Cost = previousV2Cost + additionalDistance * v2.costPerKm();
         neighborSolution.getVehicleCostMap().put(v2, v2Cost);
 
