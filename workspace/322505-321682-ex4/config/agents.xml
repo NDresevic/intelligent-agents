@@ -12,7 +12,15 @@
     <agent name="centralized-main">
         <set class-path="bin/"/>
         <set class-name="agents.CentralizedMain"/>
-        <set p="0.2"/>
+        <set p="0.4"/>
+        <set alpha="4.0"/>
+        <set beta="0.4"/>
+<!--        <set alpha="10.0"/>-->
+<!--        <set beta="0.4"/>-->
+        <!-- fairBasedOnHomeCity or allTasksToBiggestVehicle -->
+        <set initialSolution="fairBasedOnHomeCity"/>
+<!--        <set initialSolution="allTasksToBiggestVehicle"/>-->
+<!--        <set initialSolution="createInitialGiveAll"/>-->
     </agent>
 
 </agents>
