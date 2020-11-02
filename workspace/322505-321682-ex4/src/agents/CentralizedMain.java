@@ -104,7 +104,6 @@ public class CentralizedMain implements CentralizedBehavior {
 
     @Override
     public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
-        System.out.println(vehicles);
         long startTime = System.currentTimeMillis();
 
         StochasticLocalSearch sls = new StochasticLocalSearch(vehicles, tasks,
