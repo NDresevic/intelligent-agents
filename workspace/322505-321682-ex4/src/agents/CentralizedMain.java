@@ -47,7 +47,6 @@ public class CentralizedMain implements CentralizedBehavior {
         this.closestBigVehicle = new HashMap<>();
         this.biggestVehicles = new ArrayList<>();
 
-
         // this code is used to get the timeouts
         try {
             LogistSettings ls = Parsers.parseSettings("config" + File.separator + "settings_default.xml");

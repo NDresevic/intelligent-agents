@@ -8,7 +8,7 @@
 
     <!-- load the topology from an external file -->
 <!--    <topology import="config/topology/england.xml"/>-->
-    <topology import="config/topology/england.xml"/>
+    <topology import="config/topology/switzerland.xml"/>
 
     <!-- load agents -->
     <agents import="config/agents.xml"/>
@@ -31,8 +31,8 @@
 <!--             the first vehicle (blue)-->
             <vehicle name="Vehicle 1">
                 <set color="#0000ff"/>
-                <set home="Newcastle"/>
-<!--                <set home="Thun"/>-->
+<!--                <set home="Newcastle"/>-->
+                <set home="Thun"/>
                 <set speed="90"/>
                 <set capacity="30"/>
                 <set cost-per-km="5"/>
@@ -41,8 +41,8 @@
             <!-- the second vehicle (red) -->
             <vehicle name="Vehicle 2">
                 <set color="#ff0000"/>
-                <set home="Cardiff"/>
-<!--                <set home="Luzern"/>-->
+<!--                <set home="Cardiff"/>-->
+                <set home="Luzern"/>
                 <set speed="90"/>
                 <set capacity="30"/>
                 <set cost-per-km="5"/>
@@ -51,8 +51,8 @@
             <!-- the third vehicle (green) -->
             <vehicle name="Vehicle 3">
                 <set color="#00ff00"/>
-                <set home="Plymouth"/>
-<!--                <set home="Lausanne"/>-->
+<!--                <set home="Plymouth"/>-->
+                <set home="Lausanne"/>
                 <set speed="90"/>
                 <set capacity="30"/>
                 <set cost-per-km="5"/>
@@ -61,8 +61,8 @@
             <!-- the fourth vehicle (yellow) -->
             <vehicle name="Vehicle 4">
                 <set color="#ffff00"/>
-                <set home="Norwich"/>
-<!--                <set home="Zürich"/>-->
+<!--                <set home="Norwich"/>-->
+                <set home="Zürich"/>
                 <set speed="90"/>
                 <set capacity="30"/>
                 <set cost-per-km="5"/>
@@ -70,8 +70,8 @@
 
 <!--            <vehicle name="Vehicle 1">-->
 <!--                <set color="#0000ff"/>-->
-<!--                <set home="Newcastle"/>-->
-<!--                &lt;!&ndash;                <set home="Thun"/>&ndash;&gt;-->
+<!--&lt;!&ndash;                <set home="Newcastle"/>&ndash;&gt;-->
+<!--                                <set home="Thun"/>-->
 <!--                <set speed="90"/>-->
 <!--                <set capacity="30"/>-->
 <!--                <set cost-per-km="5"/>-->
@@ -80,8 +80,8 @@
 <!--            &lt;!&ndash; the second vehicle (red) &ndash;&gt;-->
 <!--            <vehicle name="Vehicle 2">-->
 <!--                <set color="#ff0000"/>-->
-<!--                <set home="Cardiff"/>-->
-<!--                &lt;!&ndash;                <set home="Luzern"/>&ndash;&gt;-->
+<!--&lt;!&ndash;                <set home="Cardiff"/>&ndash;&gt;-->
+<!--                                <set home="Luzern"/>-->
 <!--                <set speed="90"/>-->
 <!--                <set capacity="30"/>-->
 <!--                <set cost-per-km="5"/>-->
@@ -90,8 +90,8 @@
 <!--            &lt;!&ndash; the third vehicle (green) &ndash;&gt;-->
 <!--            <vehicle name="Vehicle 3">-->
 <!--                <set color="#00ff00"/>-->
-<!--                <set home="Plymouth"/>-->
-<!--                &lt;!&ndash;                <set home="Lausanne"/>&ndash;&gt;-->
+<!--&lt;!&ndash;                <set home="Plymouth"/>&ndash;&gt;-->
+<!--                                <set home="Lausanne"/>-->
 <!--                <set speed="90"/>-->
 <!--                <set capacity="30"/>-->
 <!--                <set cost-per-km="5"/>-->
@@ -100,8 +100,8 @@
 <!--            &lt;!&ndash; the fourth vehicle (yellow) &ndash;&gt;-->
 <!--            <vehicle name="Vehicle 4">-->
 <!--                <set color="#ffff00"/>-->
-<!--                <set home="Norwich"/>-->
-<!--                &lt;!&ndash;                <set home="Zürich"/>&ndash;&gt;-->
+<!--&lt;!&ndash;                <set home="Norwich"/>&ndash;&gt;-->
+<!--                                <set home="Zürich"/>-->
 <!--                <set speed="90"/>-->
 <!--                <set capacity="30"/>-->
 <!--                <set cost-per-km="5"/>-->

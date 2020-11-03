@@ -82,15 +82,8 @@ public class StochasticLocalSearch {
      * @return initial solution
      */
     private SolutionModel createInitialSolution() {
-        switch (initialSolutionName) {
-            case "fairBasedOnHomeCity":
-                return fairBasedOnHomeCity();
-            case "allTasksToBiggestVehicle":
-                return allTasksToBiggestVehicle();
-            case "giveToBiggestVehiclesFirst":
-                return giveToBiggestVehiclesFirst();
-        }
-        return allTasksToBiggestVehicle();
+        return initialSolutionName.equals("allTasksToBiggestVehicle") ?
+                allTasksToBiggestVehicle() : fairBasedOnHomeCity();
     }
 
     private SolutionModel chooseNeighbors(SolutionModel currentSolution) {
@@ -240,71 +233,6 @@ public class StochasticLocalSearch {
             currentTasks.add(taskModelDelivery);
         }
         map.put(biggestVehicle, currentTasks);
-        return new SolutionModel(map);
-    }
-
-    private SolutionModel giveToBiggestVehiclesFirst() {
-        Map<Vehicle, ArrayList<TaskModel>> map = new HashMap<>();
-        Map<Vehicle, ArrayList<TaskModel>> deliveryAppendix = new HashMap<>();
-        Map<Vehicle, Double> vehicleLoad = new HashMap<>();
-        Set<Task> notAssignedTasks = new HashSet<>(tasks);
-        Set<Task> assignedTasks = new HashSet<>();
-
-        // maps init
-        for (Vehicle vehicle : vehicleList) {
-            vehicleLoad.put(vehicle, 0d);
-            map.put(vehicle, new ArrayList<>());
-            deliveryAppendix.put(vehicle, new ArrayList<>());
-        }
-
-        for (Vehicle vehicle : sortedVehicles) {
-            for (Task task : notAssignedTasks) {
-                double toBeWeight = vehicleLoad.get(vehicle) + task.weight;
-                if (assignedTasks.contains(task) || toBeWeight > vehicle.capacity()) {
-                    continue;
-                }
-
-                ArrayList<TaskModel> currentTasks = map.get(vehicle);
-
-                TaskModel taskModelPickup = new TaskModel(task, TaskTypeEnum.PICKUP);
-                currentTasks.add(taskModelPickup);
-                map.put(vehicle, currentTasks);
-
-                ArrayList<TaskModel> toBeAddedTasks = deliveryAppendix.get(vehicle);
-                TaskModel taskModelDelivery = new TaskModel(task, TaskTypeEnum.DELIVERY);
-                toBeAddedTasks.add(taskModelDelivery);
-
-                deliveryAppendix.put(vehicle, toBeAddedTasks);
-                vehicleLoad.put(vehicle, toBeWeight);
-                assignedTasks.add(task);
-            }
-        }
-
-        notAssignedTasks.removeAll(assignedTasks);
-
-        for (Map.Entry<Vehicle, ArrayList<TaskModel>> entry : map.entrySet()) {
-            ArrayList<TaskModel> currentTasks = entry.getValue();
-            currentTasks.addAll(deliveryAppendix.get(entry.getKey()));
-            map.put(entry.getKey(), currentTasks);
-        }
-
-        for (Task task : notAssignedTasks) {
-            Vehicle vehicle;
-            //find a random vehicle that can carry a task
-            //there is a vehicle that can take the heaviest task
-            do {
-                vehicle = vehicleList.get(new Random().nextInt(vehicleList.size()));
-            } while (task.weight > vehicle.capacity());
-            ArrayList<TaskModel> currentTasks = map.get(vehicle);
-
-            TaskModel taskModelPickup = new TaskModel(task, TaskTypeEnum.PICKUP);
-            currentTasks.add(taskModelPickup);
-
-            TaskModel taskModelDelivery = new TaskModel(task, TaskTypeEnum.DELIVERY);
-            currentTasks.add(taskModelDelivery);
-
-            map.put(vehicle, currentTasks);
-        }
         return new SolutionModel(map);
     }
 

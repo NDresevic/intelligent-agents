@@ -15,10 +15,9 @@
         <set p="0.4"/>
         <set alpha="4.0"/>
         <set beta="0.2"/>
-        <!-- fairBasedOnHomeCity or allTasksToBiggestVehicle or giveToBiggestVehiclesFirst -->
+        <!-- fairBasedOnHomeCity or allTasksToBiggestVehicle -->
         <set initialSolution="fairBasedOnHomeCity"/>
 <!--        <set initialSolution="allTasksToBiggestVehicle"/>-->
-<!--        <set initialSolution="giveToBiggestVehiclesFirst"/>-->
     </agent>
 
 </agents>
