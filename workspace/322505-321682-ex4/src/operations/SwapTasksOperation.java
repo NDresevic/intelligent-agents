@@ -40,8 +40,7 @@ public class SwapTasksOperation extends Operation {
         double vehicleCost = 0d;
 
         for (int k = 0; k < tasks.size(); k++) {
-            TaskModel task = tasks.get(k);
-            TaskModel newTask = task;
+            TaskModel newTask = tasks.get(k);
 
             if (k == i) {
                 newTask = tasks.get(j);

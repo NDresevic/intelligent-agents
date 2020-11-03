@@ -28,6 +28,8 @@ public class CentralizedMain implements CentralizedBehavior {
     // parameters defined in config file /settings_default.xml
     private long setupTimeout;
     private long planTimeout;
+    // upper bound time needed to create plan from optimal solution
+    private static long PLAN_CREATION_TIME = 500;
 
     // parameters defined in config file /agents.xml
     private double p;
@@ -65,9 +67,12 @@ public class CentralizedMain implements CentralizedBehavior {
         this.initialSolutionName = agent.readProperty("initialSolution", String.class, "FairBasedOnHomeCity");
 
 
-        //50 was approoximated (for 250 agents and 1m tasks preprocessing lasts for approx 20ms)
+        // 50 was approximated (for 250 agents and 1m tasks preprocessing lasts for approx 20ms)
         if (setupTimeout > 50) {
             topologyPreprocessing();
+        } else {
+            System.err.println("Setup time is not long enough for the preprocessing. The planning is terminated.");
+            System.exit(1);
         }
     }
 
@@ -104,10 +109,8 @@ public class CentralizedMain implements CentralizedBehavior {
         long startTime = System.currentTimeMillis();
 
         StochasticLocalSearch sls = new StochasticLocalSearch(vehicles, tasks,
-                // todo: set time which includes later plan computation
-                planTimeout - (System.currentTimeMillis() - startTime) - 500,
-                p, alpha, beta, initialSolutionName,
-                closestBigVehicle, biggestVehicles);
+                planTimeout - (System.currentTimeMillis() - startTime) - PLAN_CREATION_TIME,
+                p, alpha, beta, initialSolutionName, closestBigVehicle, biggestVehicles);
 
         sls.SLS();
         SolutionModel solution = sls.getBestSolution();

@@ -14,6 +14,9 @@ import java.util.*;
 
 public class StochasticLocalSearch {
 
+    // approximate upper bound for execution time of neighbor exploration in stochastic search
+    private static long NEIGHBOUR_EXPLORATION_TIME = 1000;
+
     // used for iteration count of operation swap tasks
     private final double ALPHA;
     // used for iteration count of change task vehicle operation
@@ -50,7 +53,7 @@ public class StochasticLocalSearch {
         bestSolution = currentSolution;
 
         int count = 0;
-        while (remainingTime > 0) {
+        while (remainingTime > NEIGHBOUR_EXPLORATION_TIME) {
             long loopStartTime = System.currentTimeMillis();
 
             SolutionModel bestNeighbor = chooseNeighbors(currentSolution);
@@ -226,7 +229,7 @@ public class StochasticLocalSearch {
             map.put(vehicle, new ArrayList<>());
         }
 
-        // biggestVehicles contain sorted vehicles (by capacity and cost)
+        // sortedVehicles contain sorted vehicles (by capacity and cost)
         Vehicle biggestVehicle = sortedVehicles.get(0);
         ArrayList<TaskModel> currentTasks = new ArrayList<>();
         for (Task task : tasks) {

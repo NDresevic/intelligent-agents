@@ -14,7 +14,7 @@
         <set class-name="agents.CentralizedMain"/>
         <set p="0.4"/>
         <set alpha="4.0"/>
-        <set beta="0.4"/>
+        <set beta="0.2"/>
         <!-- fairBasedOnHomeCity or allTasksToBiggestVehicle or giveToBiggestVehiclesFirst -->
         <set initialSolution="fairBasedOnHomeCity"/>
 <!--        <set initialSolution="allTasksToBiggestVehicle"/>-->

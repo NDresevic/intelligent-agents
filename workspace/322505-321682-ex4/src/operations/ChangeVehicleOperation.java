@@ -79,7 +79,7 @@ public class ChangeVehicleOperation extends Operation {
         } else {
             additionalDistance += v2.getCurrentCity().distanceTo(ti.getTask().pickupCity);
         }
-        double v2Cost = previousV2Cost + additionalDistance * v2.costPerKm();;
+        double v2Cost = previousV2Cost + additionalDistance * v2.costPerKm();
         neighborSolution.getVehicleCostMap().put(v2, v2Cost);
 
         // update total cost
