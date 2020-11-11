@@ -2,7 +2,7 @@
 
 <history configuration="config/centralized.xml">
 	<agents>
-		<agent name="centralized-random">
+		<agent name="centralized-main">
 			<vehicle name="Vehicle 1"/>
 			<vehicle name="Vehicle 2"/>
 			<vehicle name="Vehicle 3"/>
@@ -12,61 +12,80 @@
 	<rounds>
 		<round id="1">
 			<tasks>
-				<task id="0" pickup="Cardiff" delivery="Portsmouth" weight="3" reward="51114"/>
-				<task id="1" pickup="Birmingham" delivery="Manchester" weight="3" reward="89223"/>
-				<task id="2" pickup="Cardiff" delivery="Norwich" weight="3" reward="43918"/>
-				<task id="3" pickup="Manchester" delivery="London" weight="3" reward="68101"/>
-				<task id="4" pickup="Norwich" delivery="Sheffield" weight="3" reward="48357"/>
-				<task id="5" pickup="Leeds" delivery="Manchester" weight="3" reward="87021"/>
-				<task id="6" pickup="London" delivery="Sheffield" weight="3" reward="68942"/>
-				<task id="7" pickup="Newcastle" delivery="Norwich" weight="3" reward="23333"/>
-				<task id="8" pickup="Cardiff" delivery="Sheffield" weight="3" reward="69479"/>
-				<task id="9" pickup="Newcastle" delivery="Norwich" weight="3" reward="23333"/>
-				<task id="10" pickup="Portsmouth" delivery="Manchester" weight="3" reward="54712"/>
-				<task id="11" pickup="Newcastle" delivery="Norwich" weight="3" reward="23333"/>
-				<task id="12" pickup="London" delivery="Liverpool" weight="3" reward="61890"/>
-				<task id="13" pickup="Liverpool" delivery="Leeds" weight="3" reward="93232"/>
-				<task id="14" pickup="Cardiff" delivery="Sheffield" weight="3" reward="69479"/>
-				<task id="15" pickup="Manchester" delivery="Newcastle" weight="3" reward="69390"/>
-				<task id="16" pickup="Newcastle" delivery="Birmingham" weight="3" reward="65040"/>
-				<task id="17" pickup="Plymouth" delivery="Liverpool" weight="3" reward="18071"/>
-				<task id="18" pickup="Manchester" delivery="Liverpool" weight="3" reward="99999"/>
-				<task id="19" pickup="London" delivery="Liverpool" weight="3" reward="61890"/>
-				<task id="20" pickup="Portsmouth" delivery="London" weight="3" reward="92821"/>
-				<task id="21" pickup="London" delivery="Norwich" weight="3" reward="85625"/>
-				<task id="22" pickup="Birmingham" delivery="Liverpool" weight="3" reward="83012"/>
-				<task id="23" pickup="Birmingham" delivery="London" weight="3" reward="85088"/>
-				<task id="24" pickup="Newcastle" delivery="Liverpool" weight="3" reward="75601"/>
-				<task id="25" pickup="Manchester" delivery="Plymouth" weight="3" reward="24282"/>
-				<task id="26" pickup="London" delivery="Liverpool" weight="3" reward="61890"/>
-				<task id="27" pickup="Norwich" delivery="Leeds" weight="3" reward="40965"/>
-				<task id="28" pickup="Plymouth" delivery="Birmingham" weight="3" reward="41269"/>
-				<task id="29" pickup="Newcastle" delivery="Norwich" weight="3" reward="23333"/>
+				<task id="0" pickup="Bern" delivery="Fribourg" weight="3" reward="97960"/>
+				<task id="1" pickup="Basel" delivery="Zürich" weight="3" reward="83688"/>
+				<task id="2" pickup="Genève" delivery="Luzern" weight="3" reward="18448"/>
+				<task id="3" pickup="St-Gallen" delivery="Thun" weight="3" reward="40875"/>
+				<task id="4" pickup="Lausanne" delivery="St-Gallen" weight="3" reward="18448"/>
+				<task id="5" pickup="Aarau" delivery="Zürich" weight="3" reward="95921"/>
+				<task id="6" pickup="Fribourg" delivery="Lausanne" weight="3" reward="87766"/>
+				<task id="7" pickup="Genève" delivery="Aarau" weight="3" reward="36797"/>
+				<task id="8" pickup="Neuchâtel" delivery="Basel" weight="3" reward="67378"/>
+				<task id="9" pickup="Lausanne" delivery="Neuchâtel" weight="3" reward="87766"/>
+				<task id="10" pickup="Neuchâtel" delivery="Zürich" weight="3" reward="61262"/>
+				<task id="11" pickup="Fribourg" delivery="Sion" weight="3" reward="65340"/>
+				<task id="12" pickup="Genève" delivery="Fribourg" weight="3" reward="69417"/>
+				<task id="13" pickup="Neuchâtel" delivery="Sion" weight="3" reward="63301"/>
+				<task id="14" pickup="Fribourg" delivery="St-Gallen" weight="3" reward="38836"/>
+				<task id="15" pickup="Genève" delivery="Fribourg" weight="3" reward="69417"/>
+				<task id="16" pickup="Fribourg" delivery="Neuchâtel" weight="3" reward="85727"/>
+				<task id="17" pickup="Neuchâtel" delivery="Basel" weight="3" reward="67378"/>
+				<task id="18" pickup="Lausanne" delivery="Neuchâtel" weight="3" reward="87766"/>
+				<task id="19" pickup="Thun" delivery="Luzern" weight="3" reward="59223"/>
 			</tasks>
 			<events>
-				<event id="0" time="0" vehicle="Vehicle 1" move="Leeds"/>
-				<event id="1" time="1094444404" vehicle="Vehicle 1" move="Sheffield"/>
-				<event id="2" time="1553333272" vehicle="Vehicle 1" move="Birmingham"/>
-				<event id="3" time="2555555452" vehicle="Vehicle 1" move="Cardiff"/>
-				<event id="4" time="3833333174" vehicle="Vehicle 1" pickup="0"/>
-				<event id="5" time="4133333159" vehicle="Vehicle 1" move="Birmingham"/>
-				<event id="6" time="5411110876" vehicle="Vehicle 1" move="London"/>
-				<event id="7" time="6722221929" vehicle="Vehicle 1" move="Portsmouth"/>
-				<event id="8" time="7553333001" vehicle="Vehicle 1" deliver="0"/>
-				<event id="9" time="7853332986" vehicle="Vehicle 1" move="London"/>
-				<event id="10" time="8684444060" vehicle="Vehicle 1" move="Birmingham"/>
-				<event id="11" time="9995555097" vehicle="Vehicle 1" pickup="1"/>
-				<event id="12" time="10295555075" vehicle="Vehicle 1" move="Manchester"/>
+				<event id="0" time="0" vehicle="Vehicle 1" move="Bern"/>
+				<event id="1" time="0" vehicle="Vehicle 3" move="Genève"/>
+				<event id="2" time="0" vehicle="Vehicle 4" move="Aarau"/>
+				<event id="3" time="444444436" vehicle="Vehicle 1" move="Fribourg"/>
+				<event id="4" time="666666651" vehicle="Vehicle 4" pickup="5"/>
+				<event id="5" time="966666641" vehicle="Vehicle 4" move="Zürich"/>
+				<event id="6" time="999999974" vehicle="Vehicle 1" pickup="6"/>
+				<event id="7" time="999999974" vehicle="Vehicle 3" pickup="15"/>
+				<event id="8" time="1299999964" vehicle="Vehicle 1" pickup="16"/>
+				<event id="9" time="1299999964" vehicle="Vehicle 3" pickup="7"/>
+				<event id="10" time="1599999952" vehicle="Vehicle 1" move="Lausanne"/>
+				<event id="11" time="1599999952" vehicle="Vehicle 3" pickup="2"/>
+				<event id="12" time="1633333285" vehicle="Vehicle 4" deliver="5"/>
+				<event id="13" time="1899999941" vehicle="Vehicle 3" pickup="12"/>
+				<event id="14" time="2199999931" vehicle="Vehicle 3" move="Lausanne"/>
+				<event id="15" time="2711111025" vehicle="Vehicle 1" pickup="9"/>
+				<event id="16" time="3011111016" vehicle="Vehicle 1" pickup="18"/>
+				<event id="17" time="3199999900" vehicle="Vehicle 3" pickup="4"/>
+				<event id="18" time="3311111007" vehicle="Vehicle 1" deliver="6"/>
+				<event id="19" time="3499999892" vehicle="Vehicle 3" move="Neuchâtel"/>
+				<event id="20" time="3611110999" vehicle="Vehicle 1" move="Neuchâtel"/>
+				<event id="21" time="4611110969" vehicle="Vehicle 3" pickup="13"/>
+				<event id="22" time="4722222076" vehicle="Vehicle 1" deliver="9"/>
+				<event id="23" time="4911110962" vehicle="Vehicle 3" move="Bern"/>
+				<event id="24" time="5022222069" vehicle="Vehicle 1" pickup="8"/>
+				<event id="25" time="5322222062" vehicle="Vehicle 1" pickup="17"/>
+				<event id="26" time="5577777611" vehicle="Vehicle 3" move="Fribourg"/>
+				<event id="27" time="5622222053" vehicle="Vehicle 1" deliver="18"/>
+				<event id="28" time="5922222044" vehicle="Vehicle 1" pickup="10"/>
+				<event id="29" time="6133333153" vehicle="Vehicle 3" pickup="14"/>
+				<event id="30" time="6222222036" vehicle="Vehicle 1" deliver="16"/>
+				<event id="31" time="6433333145" vehicle="Vehicle 3" move="Bern"/>
+				<event id="32" time="6522222029" vehicle="Vehicle 1" move="Bern"/>
+				<event id="33" time="6988888684" vehicle="Vehicle 3" move="Aarau"/>
+				<event id="34" time="7188888677" vehicle="Vehicle 1" move="Basel"/>
+				<event id="35" time="8211110871" vehicle="Vehicle 3" move="Zürich"/>
+				<event id="36" time="8744444187" vehicle="Vehicle 1" deliver="17"/>
+				<event id="37" time="8877777518" vehicle="Vehicle 3" move="St-Gallen"/>
+				<event id="38" time="9044444179" vehicle="Vehicle 1" pickup="1"/>
+				<event id="39" time="9344444170" vehicle="Vehicle 1" deliver="8"/>
+				<event id="40" time="9644444164" vehicle="Vehicle 1" move="Zürich"/>
+				<event id="41" time="10211110818" vehicle="Vehicle 3" pickup="3"/>
 			</events>
 		</round>
 	</rounds>
 	<statistics>
-		<stat rank="1" agent="centralized-random">
-			<total-tasks value="30"/>
-			<total-distance value="940.5"/>
-			<total-cost value="4703"/>
-			<total-reward value="51114"/>
-			<total-profit value="46411"/>
+		<stat rank="1" agent="centralized-main">
+			<total-tasks value="20"/>
+			<total-distance value="1460.0"/>
+			<total-cost value="7300"/>
+			<total-reward value="579702"/>
+			<total-profit value="572402"/>
 		</stat>
 	</statistics>
 </history>

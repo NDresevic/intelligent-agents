@@ -40,9 +40,9 @@ public class TaskModel {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        TaskModel taskModel = (TaskModel) o;
-        return task.id == taskModel.task.id &&
-                type == taskModel.type;
+        TaskModel TaskModel = (TaskModel) o;
+        return task.id == TaskModel.task.id &&
+                type == TaskModel.type;
     }
 
     @Override

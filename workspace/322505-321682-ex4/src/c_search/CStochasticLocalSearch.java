@@ -1,18 +1,18 @@
-package search;
+package c_search;
 
-import enums.TaskTypeEnum;
+import c_enums.CTaskTypeEnum;
 import logist.simulation.Vehicle;
 import logist.task.Task;
 import logist.task.TaskSet;
 import logist.topology.Topology.City;
-import models.SolutionModel;
-import models.TaskModel;
-import operations.ChangeVehicleOperation;
-import operations.SwapTasksOperation;
+import c_models.CSolutionModel;
+import c_models.CTaskModel;
+import c_operations.CChangeVehicleCOperation;
+import c_operations.CSwapTasksCOperation;
 
 import java.util.*;
 
-public class StochasticLocalSearch {
+public class CStochasticLocalSearch {
 
     // approximate upper bound for execution time of neighbor exploration in stochastic search
     private static long NEIGHBOUR_EXPLORATION_TIME = 1000;
@@ -31,12 +31,12 @@ public class StochasticLocalSearch {
     private final List<Vehicle> vehicleList;
     private final TaskSet tasks;
 
-    private SolutionModel bestSolution;
+    private CSolutionModel bestSolution;
     private long remainingTime;
 
-    public StochasticLocalSearch(List<Vehicle> vehicleList, TaskSet tasks,
-                                 long remainingTime, double p, double alpha, double beta, String initialSolutionName,
-                                 Map<City, Vehicle> closestBigVehicle, List<Vehicle> sortedVehicles) {
+    public CStochasticLocalSearch(List<Vehicle> vehicleList, TaskSet tasks,
+                                  long remainingTime, double p, double alpha, double beta, String initialSolutionName,
+                                  Map<City, Vehicle> closestBigVehicle, List<Vehicle> sortedVehicles) {
         this.vehicleList = vehicleList;
         this.tasks = tasks;
         this.remainingTime = remainingTime;
@@ -49,14 +49,14 @@ public class StochasticLocalSearch {
     }
 
     public void SLS() {
-        SolutionModel currentSolution = createInitialSolution();
+        CSolutionModel currentSolution = createInitialSolution();
         bestSolution = currentSolution;
 
         int count = 0;
         while (remainingTime > NEIGHBOUR_EXPLORATION_TIME) {
             long loopStartTime = System.currentTimeMillis();
 
-            SolutionModel bestNeighbor = chooseNeighbors(currentSolution);
+            CSolutionModel bestNeighbor = chooseNeighbors(currentSolution);
             if (bestNeighbor != null) {
                 double randomDouble = new Random().nextDouble();
                 if (randomDouble <= p) {
@@ -81,21 +81,21 @@ public class StochasticLocalSearch {
      *
      * @return initial solution
      */
-    private SolutionModel createInitialSolution() {
+    private CSolutionModel createInitialSolution() {
         return initialSolutionName.equals("allTasksToBiggestVehicle") ?
                 allTasksToBiggestVehicle() : fairBasedOnHomeCity();
     }
 
-    private SolutionModel chooseNeighbors(SolutionModel currentSolution) {
-        Map<Vehicle, ArrayList<TaskModel>> map = currentSolution.getVehicleTasksMap();
+    private CSolutionModel chooseNeighbors(CSolutionModel currentSolution) {
+        Map<Vehicle, ArrayList<CTaskModel>> map = currentSolution.getVehicleTasksMap();
 
         // the neighbors of the current solution that have the same cost as the best neighbor of the current solution
-        List<SolutionModel> currentBestNeighbors = new ArrayList<>();
+        List<CSolutionModel> currentBestNeighbors = new ArrayList<>();
         double bestNeighborCost = Double.MAX_VALUE;
         int alphaIterCount = (int) (ALPHA * vehicleList.size());
         int betaIterCount = (int) (BETA * 2 * tasks.size());
 
-        SolutionModel neighbor;
+        CSolutionModel neighbor;
         for (int k = 0; k < alphaIterCount + betaIterCount; k++) {
             Vehicle v1 = vehicleList.get(new Random().nextInt(vehicleList.size()));
 
@@ -107,7 +107,7 @@ public class StochasticLocalSearch {
 
                 int i = new Random().nextInt(map.get(v1).size());
                 int j = new Random().nextInt(map.get(v1).size());
-                neighbor = new SwapTasksOperation(currentSolution, i, j, v1).getNewSolution();
+                neighbor = new CSwapTasksCOperation(currentSolution, i, j, v1).getNewSolution();
             }
             // give a random task of a random vehicle to other random vehicle (append to the end of its plan)
             else {
@@ -117,7 +117,7 @@ public class StochasticLocalSearch {
                 }
 
                 int i = new Random().nextInt(map.get(v1).size());
-                neighbor = new ChangeVehicleOperation(currentSolution, v1, v2, i).getNewSolution();
+                neighbor = new CChangeVehicleCOperation(currentSolution, v1, v2, i).getNewSolution();
             }
 
             if (neighbor != null) {
@@ -144,9 +144,9 @@ public class StochasticLocalSearch {
      *
      * @return
      */
-    private SolutionModel fairBasedOnHomeCity() {
-        Map<Vehicle, ArrayList<TaskModel>> map = new HashMap<>();
-        Map<Vehicle, ArrayList<TaskModel>> deliveryAppendix = new HashMap<>();
+    private CSolutionModel fairBasedOnHomeCity() {
+        Map<Vehicle, ArrayList<CTaskModel>> map = new HashMap<>();
+        Map<Vehicle, ArrayList<CTaskModel>> deliveryAppendix = new HashMap<>();
         Map<Vehicle, Double> vehicleLoad = new HashMap<>();
         Set<Task> notAssignedTasks = new HashSet<>();
 
@@ -162,16 +162,16 @@ public class StochasticLocalSearch {
             Vehicle suboptimalVehicle = closestBigVehicle.get(task.pickupCity);
             double toBeWeight = vehicleLoad.get(suboptimalVehicle) + task.weight;
             if (toBeWeight <= suboptimalVehicle.capacity()) { //if dedicated vehicle can pick up a task
-                ArrayList<TaskModel> currentTasks = map.get(suboptimalVehicle);
+                ArrayList<CTaskModel> currentTasks = map.get(suboptimalVehicle);
                 //add task pickup in the plan
-                TaskModel taskModelPickup = new TaskModel(task, TaskTypeEnum.PICKUP);
-                currentTasks.add(taskModelPickup);
+                CTaskModel CTaskModelPickup = new CTaskModel(task, CTaskTypeEnum.PICKUP);
+                currentTasks.add(CTaskModelPickup);
                 map.put(suboptimalVehicle, currentTasks);
 
                 //add task delivery in the plan that's going to be appended later
-                ArrayList<TaskModel> toBeAddedTasks = deliveryAppendix.get(suboptimalVehicle);
-                TaskModel taskModelDelivery = new TaskModel(task, TaskTypeEnum.DELIVERY);
-                toBeAddedTasks.add(taskModelDelivery);
+                ArrayList<CTaskModel> toBeAddedTasks = deliveryAppendix.get(suboptimalVehicle);
+                CTaskModel CTaskModelDelivery = new CTaskModel(task, CTaskTypeEnum.DELIVERY);
+                toBeAddedTasks.add(CTaskModelDelivery);
                 deliveryAppendix.put(suboptimalVehicle, toBeAddedTasks);
 
                 vehicleLoad.put(suboptimalVehicle, toBeWeight);
@@ -182,8 +182,8 @@ public class StochasticLocalSearch {
         }
 
         //plan the delivery of all assigned tasks (appending after all pickups)
-        for (Map.Entry<Vehicle, ArrayList<TaskModel>> entry : map.entrySet()) {
-            ArrayList<TaskModel> currentTasks = entry.getValue();
+        for (Map.Entry<Vehicle, ArrayList<CTaskModel>> entry : map.entrySet()) {
+            ArrayList<CTaskModel> currentTasks = entry.getValue();
             currentTasks.addAll(deliveryAppendix.get(entry.getKey()));
             map.put(entry.getKey(), currentTasks);
         }
@@ -200,14 +200,14 @@ public class StochasticLocalSearch {
             } while (task.weight > vehicle.capacity());
 
             //append the task to the plan
-            ArrayList<TaskModel> currentTasks = map.get(vehicle);
-            TaskModel taskModelPickup = new TaskModel(task, TaskTypeEnum.PICKUP);
-            currentTasks.add(taskModelPickup);
-            TaskModel taskModelDelivery = new TaskModel(task, TaskTypeEnum.DELIVERY);
-            currentTasks.add(taskModelDelivery);
+            ArrayList<CTaskModel> currentTasks = map.get(vehicle);
+            CTaskModel CTaskModelPickup = new CTaskModel(task, CTaskTypeEnum.PICKUP);
+            currentTasks.add(CTaskModelPickup);
+            CTaskModel CTaskModelDelivery = new CTaskModel(task, CTaskTypeEnum.DELIVERY);
+            currentTasks.add(CTaskModelDelivery);
             map.put(vehicle, currentTasks);
         }
-        return new SolutionModel(map);
+        return new CSolutionModel(map);
     }
 
     /**
@@ -216,27 +216,27 @@ public class StochasticLocalSearch {
      *
      * @return
      */
-    private SolutionModel allTasksToBiggestVehicle() {
-        Map<Vehicle, ArrayList<TaskModel>> map = new HashMap<>();
+    private CSolutionModel allTasksToBiggestVehicle() {
+        Map<Vehicle, ArrayList<CTaskModel>> map = new HashMap<>();
         for (Vehicle vehicle : vehicleList) {
             map.put(vehicle, new ArrayList<>());
         }
 
         // sortedVehicles contain sorted vehicles (by capacity and cost)
         Vehicle biggestVehicle = sortedVehicles.get(0);
-        ArrayList<TaskModel> currentTasks = new ArrayList<>();
+        ArrayList<CTaskModel> currentTasks = new ArrayList<>();
         for (Task task : tasks) {
-            TaskModel taskModelPickup = new TaskModel(task, TaskTypeEnum.PICKUP);
-            currentTasks.add(taskModelPickup);
+            CTaskModel CTaskModelPickup = new CTaskModel(task, CTaskTypeEnum.PICKUP);
+            currentTasks.add(CTaskModelPickup);
 
-            TaskModel taskModelDelivery = new TaskModel(task, TaskTypeEnum.DELIVERY);
-            currentTasks.add(taskModelDelivery);
+            CTaskModel CTaskModelDelivery = new CTaskModel(task, CTaskTypeEnum.DELIVERY);
+            currentTasks.add(CTaskModelDelivery);
         }
         map.put(biggestVehicle, currentTasks);
-        return new SolutionModel(map);
+        return new CSolutionModel(map);
     }
 
-    public SolutionModel getBestSolution() {
+    public CSolutionModel getBestSolution() {
         return bestSolution;
     }
 }

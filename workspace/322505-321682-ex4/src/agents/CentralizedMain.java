@@ -1,6 +1,6 @@
 package agents;
 
-import enums.TaskTypeEnum;
+import c_enums.CTaskTypeEnum;
 import logist.LogistSettings;
 import logist.agent.Agent;
 import logist.behavior.CentralizedBehavior;
@@ -11,9 +11,9 @@ import logist.task.TaskDistribution;
 import logist.task.TaskSet;
 import logist.topology.Topology;
 import logist.topology.Topology.City;
-import models.SolutionModel;
-import models.TaskModel;
-import search.StochasticLocalSearch;
+import c_models.CSolutionModel;
+import c_models.CTaskModel;
+import c_search.CStochasticLocalSearch;
 
 import java.io.File;
 import java.util.*;
@@ -107,24 +107,24 @@ public class CentralizedMain implements CentralizedBehavior {
     public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
         long startTime = System.currentTimeMillis();
 
-        StochasticLocalSearch sls = new StochasticLocalSearch(vehicles, tasks,
+        CStochasticLocalSearch sls = new CStochasticLocalSearch(vehicles, tasks,
                 planTimeout - (System.currentTimeMillis() - startTime) - PLAN_CREATION_TIME,
                 p, alpha, beta, initialSolutionName, closestBigVehicle, biggestVehicles);
 
         sls.SLS();
-        SolutionModel solution = sls.getBestSolution();
+        CSolutionModel solution = sls.getBestSolution();
 
         List<Plan> plans = new ArrayList<>();
         double cost = 0;
         for (Vehicle vehicle : vehicles) {
             City currentCity = vehicle.getCurrentCity();
-            List<TaskModel> taskModels = solution.getVehicleTasksMap().get(vehicle);
+            List<CTaskModel> CTaskModels = solution.getVehicleTasksMap().get(vehicle);
             Plan plan = new Plan(currentCity);
 
-            for (TaskModel task : taskModels) {
+            for (CTaskModel task : CTaskModels) {
                 City nextCity;
 
-                if (task.getType().equals(TaskTypeEnum.PICKUP)) {
+                if (task.getType().equals(CTaskTypeEnum.PICKUP)) {
                     nextCity = task.getTask().pickupCity;
                     List<City> intermediateCities = currentCity.pathTo(nextCity);
                     for (City city : intermediateCities) {
@@ -147,7 +147,7 @@ public class CentralizedMain implements CentralizedBehavior {
 
             double vehicleCost = plan.totalDistance() * vehicle.costPerKm();
             System.out.println(String.format("Vehicle: %d | Number of tasks: %d | Cost: %.2f",
-                    vehicle.id(), taskModels.size() / 2, vehicleCost));
+                    vehicle.id(), CTaskModels.size() / 2, vehicleCost));
             cost += vehicleCost;
             plans.add(plan);
             System.out.println(plan);
