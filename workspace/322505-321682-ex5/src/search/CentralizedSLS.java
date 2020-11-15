@@ -46,6 +46,7 @@ public class CentralizedSLS {
 
             SolutionModel bestNeighbor = chooseNeighbors(currentSolution);
             if (bestNeighbor != null) {
+                // todo: dodati simulirano kaljenje
                 double randomDouble = new Random().nextDouble();
                 if (randomDouble <= p) {
                     currentSolution = bestNeighbor;
@@ -64,7 +65,74 @@ public class CentralizedSLS {
         }
     }
 
+    /**
+     * version 2
+     * @param currentSolution
+     * @return
+     */
+    // todo: refactor this and delete first version if we decide this way is better
     private SolutionModel chooseNeighbors(SolutionModel currentSolution) {
+        Map<Vehicle, ArrayList<TaskModel>> map = currentSolution.getVehicleTasksMap();
+
+        // the neighbors of the current solution that have the same cost as the best neighbor of the current solution
+        List<SolutionModel> currentBestNeighbors = new ArrayList<>();
+        double bestNeighborCost = Double.MAX_VALUE;
+
+        SolutionModel neighbor;
+        // pick random vehicle and try to swap it's every task
+        Vehicle v1 = vehicleList.get(new Random().nextInt(vehicleList.size()));
+        List<TaskModel> v1TaskModels = map.get(v1);
+        for (int i = 0; i < v1TaskModels.size(); i++) {
+            int j = new Random().nextInt(v1TaskModels.size());
+            if (i == j) {
+                continue;
+            }
+            neighbor = new SwapTasksOperation(currentSolution, i, j, v1).getNewSolution();
+
+            if (neighbor != null) {
+                if (currentBestNeighbors.isEmpty() || neighbor.getCost() < bestNeighborCost) {
+                    bestNeighborCost = neighbor.getCost();
+                    currentBestNeighbors = new ArrayList<>();
+                    currentBestNeighbors.add(neighbor);
+                } else if (neighbor.getCost() == bestNeighborCost) {
+                    currentBestNeighbors.add(neighbor);
+                }
+            }
+        }
+
+        // for every vehicle pick a random task and assign it to some other vehicle
+        for (Vehicle v2 : vehicleList) {
+            if (v1.equals(v2) || map.get(v2).size() < 1) {
+                continue;
+            }
+
+            int i = new Random().nextInt(map.get(v2).size());
+            neighbor = new ChangeVehicleOperation(currentSolution, v2, v1, i).getNewSolution();
+
+            if (neighbor != null) {
+                if (currentBestNeighbors.isEmpty() || neighbor.getCost() < bestNeighborCost) {
+                    bestNeighborCost = neighbor.getCost();
+                    currentBestNeighbors = new ArrayList<>();
+                    currentBestNeighbors.add(neighbor);
+                } else if (neighbor.getCost() == bestNeighborCost) {
+                    currentBestNeighbors.add(neighbor);
+                }
+            }
+        }
+
+        // choose random best neighbor
+        if (!currentBestNeighbors.isEmpty())
+            return currentBestNeighbors.get(new Random().nextInt(currentBestNeighbors.size()));
+        return null;
+    }
+
+    /**
+     * version 1
+     * Creating neighbours by iterating using the ALPHA and BETA parameters read from config.
+     * @param currentSolution
+     * @return
+     */
+    private SolutionModel chooseNeighborsWithAlphaBeta(SolutionModel currentSolution) {
         Map<Vehicle, ArrayList<TaskModel>> map = currentSolution.getVehicleTasksMap();
 
         // the neighbors of the current solution that have the same cost as the best neighbor of the current solution

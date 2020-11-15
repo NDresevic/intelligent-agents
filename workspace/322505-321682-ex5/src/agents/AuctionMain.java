@@ -96,13 +96,15 @@ public class AuctionMain implements AuctionBehavior {
 
         // temp: to create initial solution
         Map<Vehicle, ArrayList<TaskModel>> vehicleTasksMap = new HashMap<>();
+        for (Vehicle vehicle : vehicles) {
+            vehicleTasksMap.put(vehicle, new ArrayList<>());
+        }
         vehicleTasksMap.put(vehicles.get(0), (ArrayList<TaskModel>) taskModels);
         SolutionModel initialSolution = new SolutionModel(vehicleTasksMap);
         //
 
-        ArrayList<Vehicle> oneVehicle = new ArrayList<>();
-        oneVehicle.add(vehicles.get(0));
-        CentralizedSLS sls = new CentralizedSLS(oneVehicle, tasks,
+        // todo: proveriti da li imamo bug onog lika sa moodle - ne koristiti task set nego svoje taskove?
+        CentralizedSLS sls = new CentralizedSLS(vehicles, tasks,
                 planTimeout - (System.currentTimeMillis() - startTime) - PLAN_CREATION_TIME,
                 p, alpha, beta, initialSolution);
 
