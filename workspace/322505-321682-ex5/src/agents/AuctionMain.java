@@ -15,6 +15,8 @@ import logist.topology.Topology;
 import models.SolutionModel;
 import models.TaskModel;
 import search.CentralizedSLS;
+import strategy.StrategyFuture;
+import strategy.StrategyPast;
 
 import java.io.File;
 import java.util.*;
@@ -25,6 +27,8 @@ public class AuctionMain implements AuctionBehavior {
     private TaskDistribution distribution;
     private Agent agent;
     private List<TaskModel> taskModels;
+    private StrategyPast strategyPast;
+    private StrategyFuture strategyFuture;
 
     // parameters defined in config file /settings_auction.xml
     private long setupTimeout;
@@ -37,6 +41,7 @@ public class AuctionMain implements AuctionBehavior {
     private double p;
     private Double alpha;
     private Double beta;
+    private Double epsilon;
 
     @Override
     public void setup(Topology topology, TaskDistribution distribution, Agent agent) {
@@ -63,6 +68,10 @@ public class AuctionMain implements AuctionBehavior {
         this.p = agent.readProperty("p", Double.class, 0.4);
         this.alpha = agent.readProperty("alpha", Double.class, 4.0);
         this.beta = agent.readProperty("beta", Double.class, 0.4);
+        this.epsilon = agent.readProperty("epsilon", Double.class, 0.1);
+
+        this.strategyPast = new StrategyPast(epsilon, topology, agent);
+        this.strategyFuture = new StrategyFuture(distribution, topology, agent);
     }
 
     @Override
@@ -83,6 +92,12 @@ public class AuctionMain implements AuctionBehavior {
 
     @Override
     public void auctionResult(Task lastTask, int lastWinner, Long[] lastOffers) {
+        //TODO: handle null values in lastOffers (that means that the agent did not participate in the auction)
+
+        if(strategyPast.getAgentsCosts().isEmpty()){
+            strategyPast.initializeAgentCosts(lastOffers.length);
+        }
+
         // todo: do something based on lastOffers
         if (lastWinner == agent.id()) {
             this.taskModels.add(new TaskModel(lastTask, TaskTypeEnum.PICKUP));
