@@ -67,10 +67,11 @@ public class CentralizedSLS {
 
     /**
      * version 2
+     *
      * @param currentSolution
      * @return
      */
-    // todo: refactor this and delete first version if we decide this way is better
+    // todo: refactor this and delete first version if we decide this way is better - compare performance of both v!!!
     private SolutionModel chooseNeighbors(SolutionModel currentSolution) {
         Map<Vehicle, ArrayList<TaskModel>> map = currentSolution.getVehicleTasksMap();
 
@@ -129,6 +130,7 @@ public class CentralizedSLS {
     /**
      * version 1
      * Creating neighbours by iterating using the ALPHA and BETA parameters read from config.
+     *
      * @param currentSolution
      * @return
      */

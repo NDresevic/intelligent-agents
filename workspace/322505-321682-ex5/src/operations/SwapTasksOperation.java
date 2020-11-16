@@ -45,7 +45,7 @@ public class SwapTasksOperation extends Operation {
             if (k == i) {
                 newTask = tasks.get(j);
                 neighborSolution.getTaskPairIndexMap().put(new TaskModel(newTask.getTask(), newTask.getPairTaskType()), i);
-            } else if (k == j){
+            } else if (k == j) {
                 newTask = tasks.get(i);
                 neighborSolution.getTaskPairIndexMap().put(new TaskModel(newTask.getTask(), newTask.getPairTaskType()), j);
             }

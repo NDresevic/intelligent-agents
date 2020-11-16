@@ -21,6 +21,16 @@ public class SolutionModel {
     // cost of the whole solution
     private double cost;
 
+    public SolutionModel(List<Vehicle> vehicles) {
+        this.vehicleTasksMap = new HashMap<>();
+        for (Vehicle vehicle : vehicles) {
+            vehicleTasksMap.put(vehicle, new ArrayList<>());
+        }
+        this.taskPairIndexMap = new HashMap<>();
+        this.vehicleCostMap = new HashMap<>();
+        this.cost = 0.0;
+    }
+
     public SolutionModel(Map<Vehicle, ArrayList<TaskModel>> vehicleTasksMap) {
         this.vehicleTasksMap = vehicleTasksMap;
         this.taskPairIndexMap = new HashMap<>();
@@ -84,5 +94,15 @@ public class SolutionModel {
 
     public void setCost(double cost) {
         this.cost = cost;
+    }
+
+    @Override
+    public String toString() {
+        return "SolutionModel{" +
+                "vehicleTasksMap=" + vehicleTasksMap +
+                ", taskPairIndexMap=" + taskPairIndexMap +
+                ", vehicleCostMap=" + vehicleCostMap +
+                ", cost=" + cost +
+                '}';
     }
 }

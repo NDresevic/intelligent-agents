@@ -15,25 +15,20 @@ public class TaskModel {
         this.type = type;
     }
 
-    public Task getTask() {
-        return task;
-    }
-
-    public TaskTypeEnum getType() {
-        return type;
-    }
-
-    @Override
-    public String toString() {
-        return type + ": " + task.toString();
-    }
-
     public int getUpdatedLoad() {
         return type == TaskTypeEnum.PICKUP ? task.weight : -task.weight;
     }
 
     public TaskTypeEnum getPairTaskType() {
         return type == TaskTypeEnum.PICKUP ? TaskTypeEnum.DELIVERY : TaskTypeEnum.PICKUP;
+    }
+
+    public Task getTask() {
+        return task;
+    }
+
+    public TaskTypeEnum getType() {
+        return type;
     }
 
     @Override
@@ -48,5 +43,10 @@ public class TaskModel {
     @Override
     public int hashCode() {
         return Objects.hash(task.id, type);
+    }
+
+    @Override
+    public String toString() {
+        return type + ": " + task.toString();
     }
 }
