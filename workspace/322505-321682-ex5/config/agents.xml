@@ -16,6 +16,7 @@
 		<set p="0.4"/>
 		<set alpha="4.0"/>
 		<set beta="0.2"/>
+		<set epsilon="0.3"/>
 	</agent>
 	
 </agents>
