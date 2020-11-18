@@ -79,12 +79,6 @@ public class AuctionMain implements AuctionBehavior {
 
     @Override
     public Long askPrice(Task task) {
-        Long bidOfOtherAgents = strategyPast.extractBidPriceForOthers(task);
-        System.out.println("\nExctracted bid: " + bidOfOtherAgents);
-
-        double speculatedProbability = strategyFuture.speculateOnFuture(task);
-        System.out.println("Speculated probability: " + speculatedProbability);
-
         Vehicle vehicle = agent.vehicles().get(0);
         if (vehicle.capacity() < task.weight) {
             return null;
@@ -93,10 +87,43 @@ public class AuctionMain implements AuctionBehavior {
         long distanceTask = task.pickupCity.distanceUnitsTo(task.deliveryCity);
         long distanceSum = distanceTask
                 + vehicle.getCurrentCity().distanceUnitsTo(task.pickupCity);
-        double marginalCost = Measures.unitsToKM(distanceSum
-                * vehicle.costPerKm());
+        Long marginalCost = (long) Math.ceil(Measures.unitsToKM(distanceSum
+                * vehicle.costPerKm()));
+        System.out.println("\nMarginal cost : " + marginalCost);
 
-        return Math.round(marginalCost);
+        strategyPast.extractBidPriceForOthers(task);
+        Long bidOfOtherAgents = strategyPast.getExtractedBid();
+        double beliefForExtractedBid = strategyPast.getBeliefForExtractedBid();
+        System.out.println("Extracted bid: " + bidOfOtherAgents + " | Belief: " + beliefForExtractedBid);
+        Long approximateBidOfOthers;
+
+        if(bidOfOtherAgents != null)
+            approximateBidOfOthers = (long) Math.ceil(beliefForExtractedBid * bidOfOtherAgents + (1 - beliefForExtractedBid) * marginalCost) - 1;
+        else
+            approximateBidOfOthers = (long) Math.ceil(marginalCost) - 1;
+        System.out.println("Approximated bid: " + approximateBidOfOthers);
+
+        //Long myBid = Math.max(approximateBidOfOthers - 1, Math.ceil(marginalCost));
+        Long myBid;
+        if (approximateBidOfOthers > marginalCost)
+            myBid = approximateBidOfOthers;
+        else
+            myBid = marginalCost;
+
+
+
+        double speculatedProbability = strategyFuture.speculateOnFuture(task);
+
+        if (speculatedProbability > 0.2 && myBid == marginalCost) {
+            System.out.println("Decided to bid lower!");
+            //myBid = (long) (0.95 * myBid);
+            myBid -= (long) (0.25 * task.pickupCity.distanceTo(task.deliveryCity) * agent.vehicles().get(0).costPerKm());
+        }
+        System.out.println("My bid: " + myBid);
+
+        System.out.println("Speculated probability: " + speculatedProbability);
+
+        return myBid;
     }
 
     @Override
@@ -274,6 +301,12 @@ public class AuctionMain implements AuctionBehavior {
         sls.SLS();
         SolutionModel solution = sls.getBestSolution();
 
+        Double reward = 0.0;
+        for(Task task : tasks){
+            reward += task.reward;
+        }
+        reward -= solution.getCost();
+
         List<Plan> plans = new ArrayList<>();
         double cost = 0;
         for (Vehicle vehicle : vehicles) {
@@ -317,6 +350,7 @@ public class AuctionMain implements AuctionBehavior {
         long duration = endTime - startTime;
         System.out.println("Plan generation execution: " + duration + " ms.");
         System.out.println("Total cost of plans: " + cost);
+        System.out.println("Total reward: " + reward);
 
         return plans;
     }

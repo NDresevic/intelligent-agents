@@ -51,15 +51,15 @@ public class CentralizedSLS {
             SolutionModel bestNeighbor = chooseNeighbors(currentSolution);
             if (bestNeighbor != null) {
 
-                double randomDouble = new Random().nextDouble();
-                if (randomDouble <= p) {
-                    currentSolution = bestNeighbor;
-                }
-//comment this out for simmulated annealing
 //                double randomDouble = new Random().nextDouble();
-//                if (randomDouble < Math.exp(-simulatedAnnealingParam * (bestNeighbor.getCost() - currentSolution.getCost()))) {
+//                if (randomDouble <= p) {
 //                    currentSolution = bestNeighbor;
 //                }
+
+                double randomDouble = new Random().nextDouble();
+                if (randomDouble < Math.exp(-simulatedAnnealingParam * (bestNeighbor.getCost() - currentSolution.getCost()))) {
+                    currentSolution = bestNeighbor;
+                }
 
                 bestSolution = bestNeighbor.getCost() < bestSolution.getCost() ? bestNeighbor : bestSolution;
 

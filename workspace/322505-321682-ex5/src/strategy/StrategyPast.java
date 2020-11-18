@@ -29,6 +29,10 @@ public class StrategyPast {
     private Agent agent;
     //approximation for cost per kilometer for other agents
     private double approximatedVehicleCost;
+    //approximate what other bidders would bid for the last task
+    private Long extractedBid;
+    //belief for the extracted bid
+    private double beliefForExtractedBid;
 
     public StrategyPast(Double epsilon, Topology topology, Agent agent) {
         this.epsilon = epsilon;
@@ -114,7 +118,7 @@ public class StrategyPast {
         for (int i = 0; i < lastOffers.length; i++) {
             Double[][] costs = agentsCosts.get(i);
             double futureBid;
-            if(lastWinner == i)
+            if (lastWinner == i)
                 //TODO: maybe this should not be zero since he has limited capacity
                 futureBid = 0.0;
             else if (lastOffers[i] == null)
@@ -159,13 +163,31 @@ public class StrategyPast {
         }
     }
 
-    public Long extractBidPriceForOthers(Task task){
-        Double minBid = Double.MAX_VALUE;
-        for (Map.Entry<Integer, Double[][]> entry : agentsCosts.entrySet()) {
-           Double bid = entry.getValue()[task.pickupCity.id][task.deliveryCity.id];
-           if (bid != null && bid < minBid)
-               minBid = bid;
+    public void extractBidPriceForOthers(Task task) {
+        if (agentsCosts.isEmpty()) {
+            extractedBid = null;
+            beliefForExtractedBid = 0;
+        } else {
+            Double minBid = Double.MAX_VALUE;
+            int numberOfOtherAgents = agentsCosts.size();
+            int filledEntries = numberOfOtherAgents;
+            for (Map.Entry<Integer, Double[][]> entry : agentsCosts.entrySet()) {
+                Double bid = entry.getValue()[task.pickupCity.id][task.deliveryCity.id];
+                if (bid == null)
+                    filledEntries--;
+                else if (bid < minBid)
+                    minBid = bid;
+            }
+            extractedBid = minBid != Double.MAX_VALUE ? (long) Math.ceil(minBid) : null;
+            beliefForExtractedBid = filledEntries / numberOfOtherAgents;
         }
-        return minBid != Double.MAX_VALUE ? (long) Math.ceil(minBid) : null;
+    }
+
+    public Long getExtractedBid() {
+        return extractedBid;
+    }
+
+    public double getBeliefForExtractedBid() {
+        return beliefForExtractedBid;
     }
 }
