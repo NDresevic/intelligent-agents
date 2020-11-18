@@ -16,16 +16,15 @@ import logist.topology.Topology.City;
 import models.SolutionModel;
 import models.TaskModel;
 import search.CentralizedSLS;
-import strategy.StrategyFuture;
-import strategy.StrategyPast;
+import strategy.EstimateSolutionStrategy;
+import strategy.TaskDistributionStrategy;
+import strategy.AgentsBidStrategy;
 
 import java.io.File;
 import java.util.*;
 
 public class AuctionMain implements AuctionBehavior {
 
-    private Topology topology;
-    private TaskDistribution distribution;
     private Agent agent;
     private List<TaskModel> taskModels;
     private SolutionModel solutionModel;
@@ -33,8 +32,10 @@ public class AuctionMain implements AuctionBehavior {
     private StrategyFuture strategyFuture;
 
     // parameters defined in config file /settings_auction.xml
+    // todo: use set up time???
     private long setupTimeout;
     private long planTimeout;
+    // todo: include bidTimeout
     private long bidTimeout;
     // upper bound time needed to create plan from optimal solution
     private static long PLAN_CREATION_TIME = 500;
@@ -47,8 +48,6 @@ public class AuctionMain implements AuctionBehavior {
 
     @Override
     public void setup(Topology topology, TaskDistribution distribution, Agent agent) {
-        this.topology = topology;
-        this.distribution = distribution;
         this.agent = agent;
         this.taskModels = new ArrayList<>();
         this.solutionModel = new SolutionModel(agent.vehicles());
@@ -73,12 +72,18 @@ public class AuctionMain implements AuctionBehavior {
         this.beta = agent.readProperty("beta", Double.class, 0.4);
         this.epsilon = agent.readProperty("epsilon", Double.class, 0.1);
 
-        this.strategyPast = new StrategyPast(epsilon, topology, agent);
-        this.strategyFuture = new StrategyFuture(distribution, topology, agent);
+        this.agentsBidStrategy = new AgentsBidStrategy(epsilon, topology, agent);
+        this.taskDistributionStrategy = new TaskDistributionStrategy(distribution);
+        this.estimateSolutionStrategy = new EstimateSolutionStrategy(solutionModel);
     }
 
     @Override
     public Long askPrice(Task task) {
+        Long bidOfOtherAgents = agentsBidStrategy.extractBidPriceForOthers(task);
+        double speculatedProbability = taskDistributionStrategy.speculateOnTaskDistribution(task);
+        System.out.println(String.format("\nExtracted bid: %d | Speculated probability: %f",
+                bidOfOtherAgents, speculatedProbability));
+
         Vehicle vehicle = agent.vehicles().get(0);
         if (vehicle.capacity() < task.weight) {
             return null;
@@ -131,153 +136,38 @@ public class AuctionMain implements AuctionBehavior {
         //TODO: handle null values in lastOffers (that means that the agent did not participate in the auction)
         //TODO: can we do better than assuming that all all vehicles have the same cost
 
-        if(strategyPast.getAgentsCosts().isEmpty()){
-            strategyPast.initializeAgentCosts(lastOffers.length);
+        if (agentsBidStrategy.getAgentEstimatedCostsMap().isEmpty()) {
+            agentsBidStrategy.initializeAgentCosts(lastOffers.length);
         }
 
         double diffFromOptimal = lastOffers[agent.id()] - lastOffers[lastWinner];
-        System.out.println("My bid: " + lastOffers[agent.id()] + "| Difference from optimal bid: " + diffFromOptimal);
+        System.out.println(String.format("My bid: %d | Difference from optimal bid: %f",
+                lastOffers[agent.id()], diffFromOptimal));
 
-        strategyPast.updateTables(lastTask, lastWinner, lastOffers);
+        agentsBidStrategy.updateTables(lastTask, lastWinner, lastOffers);
 
-        // todo: do something based on lastOffers
+        // todo: calculate the bid based on agent bids and task distribution
         // I won the auction, add it to optimal position in my current tasks
         if (lastWinner == agent.id()) {
-            strategyFuture.appendWonTask(lastTask);
+            taskDistributionStrategy.appendWonTask(lastTask);
             TaskModel pickupTask = new TaskModel(lastTask, TaskTypeEnum.PICKUP);
             TaskModel deliveryTask = new TaskModel(lastTask, TaskTypeEnum.DELIVERY);
 
             if (this.taskModels.isEmpty()) {
-                this.addFirstTaskToSolution(solutionModel, pickupTask, deliveryTask);
-                System.out.println(solutionModel);
+                estimateSolutionStrategy.addFirstTaskToSolution(pickupTask, deliveryTask);
+                solutionModel = estimateSolutionStrategy.getSolution();
             } else {
                 // find optimal place
-                SolutionModel newSolution = this.optimalSolutionWithTask(solutionModel, pickupTask, deliveryTask);
+                SolutionModel newSolution = estimateSolutionStrategy.optimalSolutionWithTask(pickupTask, deliveryTask);
+                // todo: use marginal cost
                 double marginalCost = newSolution.getCost() - solutionModel.getCost();
-                solutionModel = newSolution;
+                estimateSolutionStrategy.setSolution(newSolution);
+                solutionModel = estimateSolutionStrategy.getSolution();
             }
 
             this.taskModels.add(new TaskModel(lastTask, TaskTypeEnum.PICKUP));
             this.taskModels.add(new TaskModel(lastTask, TaskTypeEnum.DELIVERY));
         }
-    }
-
-    /**
-     * Adds the first task to the biggest vehicle and properly updates the solution.
-     * @param solution - initial solution (empty)
-     * @param pickupTask - first task model for pick up
-     * @param deliveryTask - first task model for delivery
-     */
-    private void addFirstTaskToSolution(SolutionModel solution,  TaskModel pickupTask, TaskModel deliveryTask) {
-        // find vehicle with biggest capacity
-        int biggestCapacity = 0;
-        Vehicle biggestVehicle = null;
-        for (Map.Entry<Vehicle, ArrayList<TaskModel>> entry : solution.getVehicleTasksMap().entrySet()) {
-            if (entry.getKey().capacity() > biggestCapacity) {
-                biggestVehicle = entry.getKey();
-                biggestCapacity = biggestVehicle.capacity();
-            }
-            solution.getVehicleCostMap().put(entry.getKey(), 0.0);
-        }
-
-        // add tasks and update task pair map
-        ArrayList<TaskModel> taskModels = new ArrayList<>();
-        taskModels.add(pickupTask);
-        taskModels.add(deliveryTask);
-        solution.getVehicleTasksMap().put(biggestVehicle, taskModels);
-        solution.getTaskPairIndexMap().put(pickupTask, 1);
-        solution.getTaskPairIndexMap().put(deliveryTask, 0);
-
-        // calculate and update costs
-        double distance = biggestVehicle.getCurrentCity().distanceTo(pickupTask.getTask().pickupCity) +
-                pickupTask.getTask().pickupCity.distanceTo(deliveryTask.getTask().deliveryCity);
-        double cost = distance * biggestVehicle.costPerKm();
-        solution.getVehicleCostMap().put(biggestVehicle, cost);
-        solution.setCost(cost);
-    }
-
-    /**
-     * Method that tries all possible combinations of adding new task in the current solution and returns the optimal
-     * one based on overall cost.
-     * @param currentSolution - current optimal solution
-     * @param pickupTask - new task model for pick up
-     * @param deliveryTask - new task model for delivery
-     * @return - best solution when inserting new task or null if no such solution is valid
-     */
-    private SolutionModel optimalSolutionWithTask(SolutionModel currentSolution, TaskModel pickupTask,
-                                                  TaskModel deliveryTask) {
-        double bestCost = Double.MAX_VALUE;
-        SolutionModel bestSolution = null;
-
-        for (Map.Entry<Vehicle, ArrayList<TaskModel>> entry : currentSolution.getVehicleTasksMap().entrySet()) {
-            Vehicle vehicle = entry.getKey();
-            List<TaskModel> tasks = entry.getValue();
-
-            for (int i = 0; i < tasks.size() + 1; i++) {   // i - position of a pick up task
-                for (int j = i + 1; j < tasks.size() + 2; j++) {   // j - position of a delivery task
-                    ArrayList<TaskModel> newTaskModels = new ArrayList<>(tasks);
-                    newTaskModels.add(i, pickupTask);
-                    newTaskModels.add(j, deliveryTask);
-
-                    SolutionModel newSolution = new SolutionModel(currentSolution);
-                    newSolution.getVehicleTasksMap().put(vehicle, newTaskModels);
-                    double cost = updateSolutionAndGetCost(newSolution, vehicle);
-
-                    // update best solution if the solution is valid and new best
-                    if (Double.compare(cost, - 1) != 0 && cost < bestCost) {
-                        bestCost = cost;
-                        bestSolution = newSolution;
-                    }
-                }
-            }
-        }
-
-        return bestSolution;
-    }
-
-    /**
-     * Checks if the new solution with a new task added to a vehicle is possible. If so, the costs and task pair
-     * map are updated.
-     * @param solutionModel - solution with added new task
-     * @param vehicle - vehicle in which new task is added
-     * @return - solution cost or -1 if the plan is not valid
-     */
-    private double updateSolutionAndGetCost(SolutionModel solutionModel, Vehicle vehicle) {
-        Map<Vehicle, ArrayList<TaskModel>> vehicleTasksMap = solutionModel.getVehicleTasksMap();
-
-        double cost = 0;
-        for (Map.Entry<Vehicle, ArrayList<TaskModel>> entry : vehicleTasksMap.entrySet()) {
-            if (vehicle.id() != entry.getKey().id()) {  // vehicle which tasks are unchanged
-                cost += solutionModel.getVehicleCostMap().get(entry.getKey());
-                continue;
-            }
-            City currentCity = vehicle.getCurrentCity();
-            ArrayList<TaskModel> taskModels = entry.getValue();
-
-            double vehicleCost = 0;
-            double vehicleLoad = 0;
-            for (int i = 0; i < taskModels.size(); i++) {
-                TaskModel task = taskModels.get(i);
-                City nextCity = task.getType().equals(TaskTypeEnum.PICKUP) ?
-                        task.getTask().pickupCity : task.getTask().deliveryCity;
-                vehicleCost += currentCity.distanceTo(nextCity) * vehicle.costPerKm();
-
-                vehicleLoad += task.getUpdatedLoad();
-                // return -1 if the plan is not valid because load is bigger than capacity
-                if (vehicleLoad > vehicle.capacity()) {
-                    return -1;
-                }
-
-                solutionModel.getTaskPairIndexMap().put(new TaskModel(task.getTask(), task.getPairTaskType()), i);
-                currentCity = nextCity;
-            }
-            // update vehicle cost
-            solutionModel.getVehicleCostMap().put(vehicle, vehicleCost);
-            cost += vehicleCost;
-        }
-
-        solutionModel.setCost(cost);
-        return cost;
     }
 
     @Override
@@ -300,12 +190,6 @@ public class AuctionMain implements AuctionBehavior {
 
         sls.SLS();
         SolutionModel solution = sls.getBestSolution();
-
-        Double reward = 0.0;
-        for(Task task : tasks){
-            reward += task.reward;
-        }
-        reward -= solution.getCost();
 
         List<Plan> plans = new ArrayList<>();
         double cost = 0;
@@ -350,7 +234,6 @@ public class AuctionMain implements AuctionBehavior {
         long duration = endTime - startTime;
         System.out.println("Plan generation execution: " + duration + " ms.");
         System.out.println("Total cost of plans: " + cost);
-        System.out.println("Total reward: " + reward);
 
         return plans;
     }
