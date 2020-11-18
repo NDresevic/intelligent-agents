@@ -1,6 +1,6 @@
 package strategy;
 
-import c_models.CTaskModel;
+import models.TaskModel;
 import logist.agent.Agent;
 import logist.simulation.Vehicle;
 import logist.task.Task;
