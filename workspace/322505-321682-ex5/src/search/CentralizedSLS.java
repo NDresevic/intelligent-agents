@@ -18,6 +18,9 @@ public class CentralizedSLS {
     private final double ALPHA;
     // used for iteration count of change task vehicle operation
     private final double BETA;
+    // the initial constant for simulated annealing
+    private double simulatedAnnealingParam;
+
     private final double p;
     // any city maps to the closest vehicle (based on vehicle home town)
     private final List<Vehicle> vehicleList;
@@ -41,16 +44,22 @@ public class CentralizedSLS {
         SolutionModel currentSolution = bestSolution;
 
         int count = 0;
+        double acceptanceProbability;
         while (remainingTime > NEIGHBOUR_EXPLORATION_TIME) {
             long loopStartTime = System.currentTimeMillis();
 
             SolutionModel bestNeighbor = chooseNeighbors(currentSolution);
             if (bestNeighbor != null) {
-                // todo: dodati simulirano kaljenje
+
                 double randomDouble = new Random().nextDouble();
                 if (randomDouble <= p) {
                     currentSolution = bestNeighbor;
                 }
+//comment this out for simmulated annealing
+//                double randomDouble = new Random().nextDouble();
+//                if (randomDouble < Math.exp(-simulatedAnnealingParam * (bestNeighbor.getCost() - currentSolution.getCost()))) {
+//                    currentSolution = bestNeighbor;
+//                }
 
                 bestSolution = bestNeighbor.getCost() < bestSolution.getCost() ? bestNeighbor : bestSolution;
 
@@ -59,6 +68,10 @@ public class CentralizedSLS {
                             , count, bestSolution.getCost(), currentSolution.getCost()));
                 }
                 count++;
+            }
+
+            if (count % 50000 == 0){
+                simulatedAnnealingParam *= 1.1;
             }
 
             remainingTime -= System.currentTimeMillis() - loopStartTime;

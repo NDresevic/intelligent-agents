@@ -79,6 +79,12 @@ public class AuctionMain implements AuctionBehavior {
 
     @Override
     public Long askPrice(Task task) {
+        Long bidOfOtherAgents = strategyPast.extractBidPriceForOthers(task);
+        System.out.println("\nExctracted bid: " + bidOfOtherAgents);
+
+        double speculatedProbability = strategyFuture.speculateOnFuture(task);
+        System.out.println("Speculated probability: " + speculatedProbability);
+
         Vehicle vehicle = agent.vehicles().get(0);
         if (vehicle.capacity() < task.weight) {
             return null;
@@ -96,15 +102,21 @@ public class AuctionMain implements AuctionBehavior {
     @Override
     public void auctionResult(Task lastTask, int lastWinner, Long[] lastOffers) {
         //TODO: handle null values in lastOffers (that means that the agent did not participate in the auction)
+        //TODO: can we do better than assuming that all all vehicles have the same cost
 
         if(strategyPast.getAgentsCosts().isEmpty()){
             strategyPast.initializeAgentCosts(lastOffers.length);
         }
 
+        double diffFromOptimal = lastOffers[agent.id()] - lastOffers[lastWinner];
+        System.out.println("My bid: " + lastOffers[agent.id()] + "| Difference from optimal bid: " + diffFromOptimal);
+
+        strategyPast.updateTables(lastTask, lastWinner, lastOffers);
+
         // todo: do something based on lastOffers
         // I won the auction, add it to optimal position in my current tasks
         if (lastWinner == agent.id()) {
-
+            strategyFuture.appendWonTask(lastTask);
             TaskModel pickupTask = new TaskModel(lastTask, TaskTypeEnum.PICKUP);
             TaskModel deliveryTask = new TaskModel(lastTask, TaskTypeEnum.DELIVERY);
 
