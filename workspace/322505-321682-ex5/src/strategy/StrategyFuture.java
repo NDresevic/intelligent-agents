@@ -25,9 +25,12 @@ public class StrategyFuture {
     public double speculateOnFuture(Task task) {
         double maxProbability = 0.0;
         for(Task wonTask : wonTasks){
-            double probability = distribution.probability(wonTask.deliveryCity, task.pickupCity);
-            if (probability > maxProbability)
-                maxProbability = probability;
+            double probDeliveryPickup = distribution.probability(wonTask.deliveryCity, task.pickupCity);
+            if (probDeliveryPickup > maxProbability)
+                maxProbability = probDeliveryPickup;
+            double probPickupDelivery = distribution.probability(task.deliveryCity, wonTask.pickupCity);
+            if(probPickupDelivery > maxProbability)
+                maxProbability = probPickupDelivery;
         }
         return maxProbability;
     }
