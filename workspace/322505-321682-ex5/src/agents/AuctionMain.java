@@ -17,6 +17,7 @@ import models.SolutionModel;
 import models.TaskModel;
 import search.CentralizedSLS;
 import strategy.EstimateSolutionStrategy;
+import strategy.StrategyPast;
 import strategy.TaskDistributionStrategy;
 import strategy.AgentsBidStrategy;
 
@@ -28,8 +29,9 @@ public class AuctionMain implements AuctionBehavior {
     private Agent agent;
     private List<TaskModel> taskModels;
     private SolutionModel solutionModel;
-    private StrategyPast strategyPast;
-    private StrategyFuture strategyFuture;
+    private AgentsBidStrategy agentsBidStrategy;
+    private TaskDistributionStrategy taskDistributionStrategy;
+    private EstimateSolutionStrategy estimateSolutionStrategy;
 
     // parameters defined in config file /settings_auction.xml
     // todo: use set up time???
@@ -79,11 +81,6 @@ public class AuctionMain implements AuctionBehavior {
 
     @Override
     public Long askPrice(Task task) {
-        Long bidOfOtherAgents = agentsBidStrategy.extractBidPriceForOthers(task);
-        double speculatedProbability = taskDistributionStrategy.speculateOnTaskDistribution(task);
-        System.out.println(String.format("\nExtracted bid: %d | Speculated probability: %f",
-                bidOfOtherAgents, speculatedProbability));
-
         Vehicle vehicle = agent.vehicles().get(0);
         if (vehicle.capacity() < task.weight) {
             return null;
@@ -96,10 +93,14 @@ public class AuctionMain implements AuctionBehavior {
                 * vehicle.costPerKm()));
         System.out.println("\nMarginal cost : " + marginalCost);
 
-        strategyPast.extractBidPriceForOthers(task);
-        Long bidOfOtherAgents = strategyPast.getExtractedBid();
-        double beliefForExtractedBid = strategyPast.getBeliefForExtractedBid();
-        System.out.println("Extracted bid: " + bidOfOtherAgents + " | Belief: " + beliefForExtractedBid);
+        double speculatedProbability = taskDistributionStrategy.speculateOnTaskDistribution(task);
+        agentsBidStrategy.extractBidPriceForOthers(task);
+
+        Long bidOfOtherAgents = agentsBidStrategy.getExtractedBid();
+        double beliefForExtractedBid = agentsBidStrategy.getBeliefForExtractedBid();
+        System.out.println(String.format("\nExtracted bid: %d | Speculated probability: %f",
+                bidOfOtherAgents, speculatedProbability));
+        System.out.println("Belief: " + beliefForExtractedBid);
         Long approximateBidOfOthers;
 
         if(bidOfOtherAgents != null)
@@ -115,9 +116,6 @@ public class AuctionMain implements AuctionBehavior {
         else
             myBid = marginalCost;
 
-
-
-        double speculatedProbability = strategyFuture.speculateOnFuture(task);
 
         if (speculatedProbability > 0.2 && myBid == marginalCost) {
             System.out.println("Decided to bid lower!");
@@ -191,6 +189,13 @@ public class AuctionMain implements AuctionBehavior {
         sls.SLS();
         SolutionModel solution = sls.getBestSolution();
 
+        Double reward = 0.0;
+        for(Task task : tasks){
+            reward += task.reward;
+        }
+        reward -= solution.getCost();
+
+
         List<Plan> plans = new ArrayList<>();
         double cost = 0;
         for (Vehicle vehicle : vehicles) {
@@ -234,6 +239,7 @@ public class AuctionMain implements AuctionBehavior {
         long duration = endTime - startTime;
         System.out.println("Plan generation execution: " + duration + " ms.");
         System.out.println("Total cost of plans: " + cost);
+        System.out.println("Total reward: " + reward);
 
         return plans;
     }
