@@ -17,7 +17,6 @@ import models.SolutionModel;
 import models.TaskModel;
 import search.CentralizedSLS;
 import strategy.EstimateSolutionStrategy;
-import strategy.StrategyPast;
 import strategy.TaskDistributionStrategy;
 import strategy.AgentsBidStrategy;
 
