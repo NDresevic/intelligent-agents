@@ -33,13 +33,15 @@ public class AuctionMain implements AuctionBehavior {
     private EstimateSolutionStrategy estimateSolutionStrategy;
 
     // parameters defined in config file /settings_auction.xml
-    // todo: use set up time???
     private long setupTimeout;
     private long planTimeout;
     // todo: include bidTimeout
     private long bidTimeout;
+    private long startBidTime;
     // upper bound time needed to create plan from optimal solution
     private static long PLAN_CREATION_TIME = 500;
+
+    private long maxBidTime = Long.MIN_VALUE;
 
     // parameters defined in config file /agents.xml
     private double p;
@@ -49,6 +51,8 @@ public class AuctionMain implements AuctionBehavior {
 
     @Override
     public void setup(Topology topology, TaskDistribution distribution, Agent agent) {
+        long startTime = System.currentTimeMillis();
+
         this.agent = agent;
         this.taskModels = new ArrayList<>();
         this.solutionModel = new SolutionModel(agent.vehicles());
@@ -73,6 +77,11 @@ public class AuctionMain implements AuctionBehavior {
         this.beta = agent.readProperty("beta", Double.class, 0.4);
         this.epsilon = agent.readProperty("epsilon", Double.class, 0.1);
 
+        if (setupTimeout < System.currentTimeMillis() - startTime - 50) {
+            System.err.println("Setup time is not long enough for the preprocessing. The planning is terminated.");
+            System.exit(1);
+        }
+
         this.agentsBidStrategy = new AgentsBidStrategy(epsilon, topology, agent);
         this.taskDistributionStrategy = new TaskDistributionStrategy(distribution);
         this.estimateSolutionStrategy = new EstimateSolutionStrategy(solutionModel);
@@ -80,6 +89,8 @@ public class AuctionMain implements AuctionBehavior {
 
     @Override
     public Long askPrice(Task task) {
+        startBidTime = System.currentTimeMillis();
+
         Vehicle vehicle = agent.vehicles().get(0);
         if (vehicle.capacity() < task.weight) {
             return null;
@@ -92,6 +103,12 @@ public class AuctionMain implements AuctionBehavior {
                 * vehicle.costPerKm()));
         System.out.println("\nMarginal cost : " + marginalCost);
 
+        // for 50 tasks and 5 vehicles we have max bid time of 3860
+        // for 300 tasks 2 vehicles -> 7374
+        if (bidTimeout < 5000) {
+            return marginalCost;
+        }
+
         double speculatedProbability = taskDistributionStrategy.speculateOnTaskDistribution(task);
         agentsBidStrategy.extractBidPriceForOthers(task);
 
@@ -102,7 +119,7 @@ public class AuctionMain implements AuctionBehavior {
         System.out.println("Belief: " + beliefForExtractedBid);
         Long approximateBidOfOthers;
 
-        if(bidOfOtherAgents != null)
+        if (bidOfOtherAgents != null)
             approximateBidOfOthers = (long) Math.ceil(beliefForExtractedBid * bidOfOtherAgents + (1 - beliefForExtractedBid) * marginalCost) - 1;
         else
             approximateBidOfOthers = (long) Math.ceil(marginalCost) - 1;
@@ -116,13 +133,12 @@ public class AuctionMain implements AuctionBehavior {
             myBid = marginalCost;
 
 
-        if (speculatedProbability > 0.2 && myBid == marginalCost) {
+        if (speculatedProbability > 0.2 && myBid.equals(marginalCost)) {
             System.out.println("Decided to bid lower!");
             //myBid = (long) (0.95 * myBid);
             myBid -= (long) (0.25 * task.pickupCity.distanceTo(task.deliveryCity) * agent.vehicles().get(0).costPerKm());
         }
         System.out.println("My bid: " + myBid);
-
         System.out.println("Speculated probability: " + speculatedProbability);
 
         return myBid;
@@ -130,9 +146,6 @@ public class AuctionMain implements AuctionBehavior {
 
     @Override
     public void auctionResult(Task lastTask, int lastWinner, Long[] lastOffers) {
-        //TODO: handle null values in lastOffers (that means that the agent did not participate in the auction)
-        //TODO: can we do better than assuming that all all vehicles have the same cost
-
         if (agentsBidStrategy.getAgentEstimatedCostsMap().isEmpty()) {
             agentsBidStrategy.initializeAgentCosts(lastOffers.length);
         }
@@ -140,6 +153,11 @@ public class AuctionMain implements AuctionBehavior {
         double diffFromOptimal = lastOffers[agent.id()] - lastOffers[lastWinner];
         System.out.println(String.format("My bid: %d | Difference from optimal bid: %f",
                 lastOffers[agent.id()], diffFromOptimal));
+
+        if (bidTimeout < 5000) {
+
+        }
+        // todo: kad bid nije dovoljan onda dodajes samo redom taskove i ne radis nista
 
         agentsBidStrategy.updateTables(lastTask, lastWinner, lastOffers);
 
@@ -165,10 +183,23 @@ public class AuctionMain implements AuctionBehavior {
             this.taskModels.add(new TaskModel(lastTask, TaskTypeEnum.PICKUP));
             this.taskModels.add(new TaskModel(lastTask, TaskTypeEnum.DELIVERY));
         }
+
+//        System.out.println("VREME ZA TASK: ");
+//        long now = System.currentTimeMillis() - startBidTime;
+//        if (now > maxBidTime) {
+//            maxBidTime = now;
+//        }
+//        System.out.println(now);
     }
 
     @Override
     public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
+//        System.out.println("MAX BID:");
+        // 300 taskova -> 7374
+        // 50 taskova -> 3653
+//        System.out.println(maxBidTime);
+        long startTime = System.currentTimeMillis();
+
         System.out.println("Initial plan:");
         for (Map.Entry<Vehicle, ArrayList<TaskModel>> entry : solutionModel.getVehicleTasksMap().entrySet()) {
             Vehicle vehicle = entry.getKey();
@@ -178,9 +209,6 @@ public class AuctionMain implements AuctionBehavior {
         }
         System.out.println();
 
-        long startTime = System.currentTimeMillis();
-
-        // todo: proveriti da li imamo bug onog lika sa moodle - ne koristiti task set nego svoje taskove?
         CentralizedSLS sls = new CentralizedSLS(vehicles, tasks,
                 planTimeout - (System.currentTimeMillis() - startTime) - PLAN_CREATION_TIME,
                 p, alpha, beta, solutionModel);
@@ -188,12 +216,11 @@ public class AuctionMain implements AuctionBehavior {
         sls.SLS();
         SolutionModel solution = sls.getBestSolution();
 
-        Double reward = 0.0;
-        for(Task task : tasks){
+        double reward = 0.0;
+        for (Task task : tasks) {
             reward += task.reward;
         }
         reward -= solution.getCost();
-
 
         List<Plan> plans = new ArrayList<>();
         double cost = 0;

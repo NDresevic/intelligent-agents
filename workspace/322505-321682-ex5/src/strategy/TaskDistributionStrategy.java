@@ -19,8 +19,9 @@ public class TaskDistributionStrategy {
     /**
      * speculates on the future tasks (the tasks that will show up for auction in the future)
      * calculate how likely is to have task [task.delivery, wontask.pickup] or [wontask.delivery, task.pickup]
-     *          in the future where won task is the task that the agent already won on the auctions
+     * in the future where won task is the task that the agent already won on the auctions
      * it returns the biggest over all probabilities
+     *
      * @param task
      * @return
      */
