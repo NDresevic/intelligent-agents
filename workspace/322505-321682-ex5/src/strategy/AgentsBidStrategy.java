@@ -1,7 +1,5 @@
 package strategy;
 
-import logist.agent.Agent;
-import logist.simulation.Vehicle;
 import logist.task.Task;
 import logist.topology.Topology.City;
 import logist.topology.Topology;
@@ -26,8 +24,10 @@ public class AgentsBidStrategy {
     //approximate what other bidders would bid for the last task
     // approximation for cost per kilometer for other agents
     private double approximatedVehicleCost;
+    // biggest distance between 2 cities
+    private long biggestCityDistance;
 
-    public AgentsBidStrategy(Double epsilon, Topology topology, Agent agent, double approximatedVehicleCost) {
+    public AgentsBidStrategy(Double epsilon, Topology topology, double approximatedVehicleCost) {
         this.epsilon = epsilon;
         this.topology = topology;
         this.approximatedVehicleCost = approximatedVehicleCost;
@@ -35,17 +35,14 @@ public class AgentsBidStrategy {
         this.idCityMap = new HashMap<>();
         this.closeCitiesMap = new HashMap<>();
         this.epsilonCloseCityIdsMap = new HashMap<>();
+        this.biggestCityDistance = Long.MIN_VALUE;
         this.initializeCityAndDistanceMaps();
     }
-
 
     /**
      * initializes maps: idCityMap, closeCitiesMap and epsilonCloseCityIdsMap
      */
     private void initializeCityAndDistanceMaps() {
-        // biggest distance between cities
-        double biggestDistance = Double.MIN_VALUE;
-
         for (City city : topology.cities()) {
             idCityMap.put(city.id, city);
 
@@ -57,12 +54,12 @@ public class AgentsBidStrategy {
             closeCitiesMap.put(city, cities);
 
             City furthestCity = cities.get(cities.size() - 1);
-            biggestDistance = Math.max(city.distanceTo(furthestCity), biggestDistance);
+            biggestCityDistance = (long) Math.max(city.distanceTo(furthestCity), biggestCityDistance);
         }
 
         // city1 is epsilon close to a city2 iff distance(city1, city) < epsilon * biggest distance
         // calculate epsilon close cities
-        double distanceThreshold = epsilon * biggestDistance;
+        double distanceThreshold = epsilon * biggestCityDistance;
         for (City city : topology.cities()) {
             List<City> currentEpsilonCloseCities = new ArrayList<>();
             List<City> cities = closeCitiesMap.get(city);
@@ -82,11 +79,9 @@ public class AgentsBidStrategy {
     public void initializeAgentCosts(int numberOfAgents) {
         int n = topology.cities().size();
         for (int i = 0; i < numberOfAgents; i++) {
-            Double[][] cityMatrix = new Double[n][n];
-            agentEstimatedCostsMap.put(i, cityMatrix);
+            agentEstimatedCostsMap.put(i, new Double[n][n]);
         }
     }
-
 
     /**
      * Update bidding approximations (tables) for other bidders based on the last task
@@ -179,29 +174,27 @@ public class AgentsBidStrategy {
      * @return
      */
     public Long calculateMyBid(Task task, Long marginalCost){
-        Long extractedBidOfOthers;
-        double beliefForExtractedBid;
+        Long extractedBidOfOthers = null;
+        double beliefForExtractedBid = 0;
 
-        //extract minimum of approximations for [task.piskup id, task.delivery id] for all opponents
+        //extract minimum of approximations for [task.pickup id, task.delivery id] for all opponents
         //     count belief for the approximation =  number of non-null values / number of opponents
-        if (agentEstimatedCostsMap.isEmpty()) {
-            extractedBidOfOthers = null;
-            beliefForExtractedBid = 0;
-        } else {
+        if (!agentEstimatedCostsMap.isEmpty()) {
             Double minBid = Double.MAX_VALUE;
             int numberOfOtherAgents = agentEstimatedCostsMap.size();
             int filledEntries = numberOfOtherAgents;
             for (Map.Entry<Integer, Double[][]> entry : agentEstimatedCostsMap.entrySet()) {
                 Double bid = entry.getValue()[task.pickupCity.id][task.deliveryCity.id];
-                if (bid == null)
+                if (bid == null) {
                     filledEntries--;
-                else if (bid < minBid)
+                } else if (bid < minBid) {
                     minBid = bid;
+                }
             }
             extractedBidOfOthers = minBid != Double.MAX_VALUE ? (long) Math.ceil(minBid) : null;
             beliefForExtractedBid = filledEntries * 1.0 / numberOfOtherAgents;
 
-            System.out.println(String.format("\nExtracted bid: %d" , extractedBidOfOthers));
+            System.out.println(String.format("Extracted bid: %d" , extractedBidOfOthers));
             System.out.println("Belief: " + beliefForExtractedBid);
         }
 
@@ -217,5 +210,9 @@ public class AgentsBidStrategy {
 
     public Map<Integer, Double[][]> getAgentEstimatedCostsMap() {
         return agentEstimatedCostsMap;
+    }
+
+    public double getBiggestCityDistance() {
+        return biggestCityDistance;
     }
 }

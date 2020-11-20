@@ -12,20 +12,16 @@ import java.util.Map;
 
 public class EstimateSolutionStrategy {
 
-    private SolutionModel solution;
-
-    public EstimateSolutionStrategy(SolutionModel solution) {
-        this.solution = solution;
-    }
-
     /**
      * Adds the first task to the biggest vehicle and properly updates the solution.
      *
+     * @param solution     - solution to which we add the task
      * @param pickupTask   - first task model for pick up
      * @param deliveryTask - first task model for delivery
      * @return - solution with added task
      */
-    public void addFirstTaskToSolution(TaskModel pickupTask, TaskModel deliveryTask) {
+    public static SolutionModel addFirstTaskToSolution(SolutionModel solution,
+                                                       TaskModel pickupTask, TaskModel deliveryTask) {
         // find vehicle with biggest capacity
         int biggestCapacity = 0;
         Vehicle biggestVehicle = null;
@@ -51,17 +47,21 @@ public class EstimateSolutionStrategy {
         double cost = distance * biggestVehicle.costPerKm();
         solution.getVehicleCostMap().put(biggestVehicle, cost);
         solution.setCost(cost);
+
+        return solution;
     }
 
     /**
      * Method that tries all possible combinations of adding new task in the current solution and returns the optimal
      * one based on overall cost.
      *
+     * @param solution     - solution to which we add the task
      * @param pickupTask   - new task model for pick up
      * @param deliveryTask - new task model for delivery
      * @return - best solution when inserting new task or null if no such solution is valid
      */
-    public SolutionModel optimalSolutionWithTask(TaskModel pickupTask, TaskModel deliveryTask) {
+    public static SolutionModel optimalSolutionWithTask(SolutionModel solution,
+                                                        TaskModel pickupTask, TaskModel deliveryTask) {
         double bestCost = Double.MAX_VALUE;
         SolutionModel bestSolution = null;
 
@@ -96,10 +96,10 @@ public class EstimateSolutionStrategy {
      * map are updated.
      *
      * @param solution - solution to update
-     * @param vehicle - vehicle in which new task is added
+     * @param vehicle  - vehicle in which new task is added
      * @return - solution cost or -1 if the plan is not valid
      */
-    private double updateSolutionAndGetCost(SolutionModel solution, Vehicle vehicle) {
+    private static double updateSolutionAndGetCost(SolutionModel solution, Vehicle vehicle) {
         Map<Vehicle, ArrayList<TaskModel>> vehicleTasksMap = solution.getVehicleTasksMap();
 
         double cost = 0;
@@ -135,13 +135,5 @@ public class EstimateSolutionStrategy {
 
         solution.setCost(cost);
         return cost;
-    }
-
-    public SolutionModel getSolution() {
-        return solution;
-    }
-
-    public void setSolution(SolutionModel solution) {
-        this.solution = solution;
     }
 }

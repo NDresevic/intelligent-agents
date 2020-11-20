@@ -52,10 +52,11 @@ public class TaskDistributionStrategy {
     public Long refineBid(Task task, Long marginalCost, Long myBid) {
         double speculatedProbability = speculateOnTaskDistribution(task);
         System.out.println("Speculated probability: " + speculatedProbability);
-        if (speculatedProbability > PROBABILITY_THRESHOLD && myBid == marginalCost) {
+        if (speculatedProbability > PROBABILITY_THRESHOLD && myBid.equals(marginalCost)) {
             System.out.println("Decided to bid lower!");
             //myBid = (long) (0.95 * myBid);
-            myBid -= (long) (DISCOUNT * task.pickupCity.distanceTo(task.deliveryCity) * approximatedVehicleCost);
+            myBid -= Math.max(0, (long)
+                    (DISCOUNT * task.pickupCity.distanceTo(task.deliveryCity) * approximatedVehicleCost));
         }
         return myBid;
     }

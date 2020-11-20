@@ -2,7 +2,6 @@ package agents;
 
 import enums.TaskTypeEnum;
 import logist.LogistSettings;
-import logist.Measures;
 import logist.agent.Agent;
 import logist.behavior.AuctionBehavior;
 import logist.config.Parsers;
@@ -26,43 +25,52 @@ import java.util.*;
 public class AuctionMain implements AuctionBehavior {
 
     private Agent agent;
-    private List<TaskModel> taskModels;
-    private SolutionModel solutionModel;
+    // [id -> task], in this map only the tasks that agent has won are stored
+    private Map<Integer, Task> wonTasksMap;
+    // current solution for the agent
+    private SolutionModel currentSolution;
+    // the solution with added task that we bid for
+    private SolutionModel nextBidSolution;
     private AgentsBidStrategy agentsBidStrategy;
     private TaskDistributionStrategy taskDistributionStrategy;
-    private EstimateSolutionStrategy estimateSolutionStrategy;
+    // capacity of a vehicle with biggest capacity - this is used to check if it is possible to carry new task
+    private int maxCapacity;
 
     // parameters defined in config file /settings_auction.xml
     private long setupTimeout;
     private long planTimeout;
-    // todo: include bidTimeout
     private long bidTimeout;
-    private long startBidTime;
+
+    private static long SETUP_ESTIMATED_TIME = 50;
     // upper bound time needed to create plan from optimal solution
-    private static long PLAN_CREATION_TIME = 500;
+    private static long PLAN_CREATION_ESTIMATED_TIME = 500;
+    // for 50 tasks and 5 vehicles we have max bid time of 3860
+    // for 300 tasks 2 vehicles we have max bid time of 7374
+    private static long BID_ESTIMATED_TIME = 5000;
+
     //approximation for others vehicles cost per km (approximate that all vehicles from other agents have average
     //      capacity of our agent vehicles)
     private double approximatedVehicleCost;
 
-    private long maxBidTime = Long.MIN_VALUE;
-
     // parameters defined in config file /agents.xml
     private double p;
-    private Double alpha;
-    private Double beta;
-    private Double epsilon;
+    private double alpha;
+    private double beta;
+    private double epsilon;
+    private double discount;
 
     @Override
     public void setup(Topology topology, TaskDistribution distribution, Agent agent) {
         long startTime = System.currentTimeMillis();
 
         this.agent = agent;
-        this.taskModels = new ArrayList<>();
-        this.solutionModel = new SolutionModel(agent.vehicles());
+        this.wonTasksMap = new HashMap<>();
+        this.currentSolution = new SolutionModel(agent.vehicles());
+        this.nextBidSolution = new SolutionModel(currentSolution);
         // approximate that all vehicles from other agents have average capacity of our agent vehicles
         this.approximatedVehicleCost = agent.vehicles().stream().map(Vehicle::costPerKm).reduce(0, Integer::sum)
                 * 1.0 / agent.vehicles().size();
-        System.err.println(approximatedVehicleCost);
+        this.maxCapacity = Integer.MIN_VALUE;
 
         // this code is used to get the timeouts
         try {
@@ -83,68 +91,59 @@ public class AuctionMain implements AuctionBehavior {
         this.alpha = agent.readProperty("alpha", Double.class, 4.0);
         this.beta = agent.readProperty("beta", Double.class, 0.4);
         this.epsilon = agent.readProperty("epsilon", Double.class, 0.1);
+        this.discount = agent.readProperty("epsilon", Double.class, 0.5);
 
-        if (setupTimeout < System.currentTimeMillis() - startTime - 50) {
+        if (setupTimeout < System.currentTimeMillis() - startTime - SETUP_ESTIMATED_TIME) {
             System.err.println("Setup time is not long enough for the preprocessing. The planning is terminated.");
             System.exit(1);
         }
 
-        this.agentsBidStrategy = new AgentsBidStrategy(epsilon, topology, agent);
-        this.taskDistributionStrategy = new TaskDistributionStrategy(distribution);
-        this.agentsBidStrategy = new AgentsBidStrategy(epsilon, topology, agent, approximatedVehicleCost);
+        this.agentsBidStrategy = new AgentsBidStrategy(epsilon, topology, approximatedVehicleCost);
         this.taskDistributionStrategy = new TaskDistributionStrategy(distribution, approximatedVehicleCost);
-        this.estimateSolutionStrategy = new EstimateSolutionStrategy(solutionModel);
+
+        for (Vehicle vehicle : agent.vehicles()) {
+            this.maxCapacity = Math.max(vehicle.capacity(), maxCapacity);
+        }
     }
 
     @Override
     public Long askPrice(Task task) {
-        startBidTime = System.currentTimeMillis();
-
-        Vehicle vehicle = agent.vehicles().get(0);
-        if (vehicle.capacity() < task.weight) {
+        // return null if we don't have a vehicle big enough to carry the task
+        if (task.weight > this.maxCapacity) {
             return null;
         }
 
-        long distanceTask = task.pickupCity.distanceUnitsTo(task.deliveryCity);
-        long distanceSum = distanceTask
-                + vehicle.getCurrentCity().distanceUnitsTo(task.pickupCity);
-        Long marginalCost = (long) Math.ceil(Measures.unitsToKM(distanceSum
-                * vehicle.costPerKm()));
-        System.out.println("\nMarginal cost : " + marginalCost);
-
-        // for 50 tasks and 5 vehicles we have max bid time of 3860
-        // for 300 tasks 2 vehicles -> 7374
-        if (bidTimeout < 5000) {
-            return marginalCost;
+        // if bid time is not long enough for our strategy agent bids the approximated maximal marginal cost
+        if (bidTimeout < BID_ESTIMATED_TIME) {
+            long distance = (long) (agentsBidStrategy.getBiggestCityDistance() +
+                    task.pickupCity.distanceUnitsTo(task.deliveryCity));
+            return distance * maxCapacity;
         }
 
-        double speculatedProbability = taskDistributionStrategy.speculateOnTaskDistribution(task);
-        agentsBidStrategy.extractBidPriceForOthers(task);
+        TaskModel pickupTask = new TaskModel(task, TaskTypeEnum.PICKUP);
+        TaskModel deliveryTask = new TaskModel(task, TaskTypeEnum.DELIVERY);
 
-        Long bidOfOtherAgents = agentsBidStrategy.getExtractedBid();
-        double beliefForExtractedBid = agentsBidStrategy.getBeliefForExtractedBid();
-        System.out.println(String.format("\nExtracted bid: %d | Speculated probability: %f",
-                bidOfOtherAgents, speculatedProbability));
-        System.out.println("Belief: " + beliefForExtractedBid);
-        Long approximateBidOfOthers;
+        // create best next solution if agent receives the auction task and calculate the marginal cost
+        long marginalCost;
+        if (this.wonTasksMap.isEmpty()) {
+            nextBidSolution = EstimateSolutionStrategy.addFirstTaskToSolution(new SolutionModel(currentSolution),
+                    pickupTask, deliveryTask);
+            marginalCost = (long) nextBidSolution.getCost();
+        } else {
+            // find optimal solution with auction task
+            nextBidSolution = EstimateSolutionStrategy.optimalSolutionWithTask(new SolutionModel(currentSolution),
+                    pickupTask, deliveryTask);
+            marginalCost = (long) (nextBidSolution.getCost() - currentSolution.getCost());
+        }
+        System.out.println("\nMarginal cost : " + marginalCost);
 
-        if (bidOfOtherAgents != null)
-            approximateBidOfOthers = (long) Math.ceil(beliefForExtractedBid * bidOfOtherAgents + (1 - beliefForExtractedBid) * marginalCost) - 1;
-        else
-            approximateBidOfOthers = (long) Math.ceil(marginalCost) - 1;
-        System.out.println("Approximated bid: " + approximateBidOfOthers);
-
-        //Long myBid = Math.max(approximateBidOfOthers - 1, Math.ceil(marginalCost));
-        Long myBid;
-        if (approximateBidOfOthers > marginalCost)
-            myBid = approximateBidOfOthers;
-        else
-            myBid = marginalCost;
         Long myBid = agentsBidStrategy.calculateMyBid(task, marginalCost);
         myBid = taskDistributionStrategy.refineBid(task, marginalCost, myBid);
 
-        System.out.println("My bid: " + myBid);
-        System.out.println("Speculated probability: " + speculatedProbability);
+        if (myBid <= 1) {
+            myBid = (long) (this.discount *
+                    task.pickupCity.distanceUnitsTo(task.deliveryCity) * approximatedVehicleCost);
+        }
 
         return myBid;
     }
@@ -155,68 +154,61 @@ public class AuctionMain implements AuctionBehavior {
             agentsBidStrategy.initializeAgentCosts(lastOffers.length);
         }
 
-        double diffFromOptimal = lastOffers[agent.id()] - lastOffers[lastWinner];
-        System.out.println(String.format("My bid: %d | Difference from optimal bid: %f",
-                lastOffers[agent.id()], diffFromOptimal));
-
-        if (bidTimeout < 5000) {
-
+        if (lastOffers[agent.id()] != null) {
+            double diffFromOptimal = lastOffers[agent.id()] - lastOffers[lastWinner];
+            System.out.println(String.format("My bid: %d | Difference from optimal bid: %f",
+                    lastOffers[agent.id()], diffFromOptimal));
         }
-        // todo: kad bid nije dovoljan onda dodajes samo redom taskove i ne radis nista
+
+        // if bid time is not long enough for our strategy and we have won the task agents just adds the task at the
+        // end of the route
+        if (bidTimeout < BID_ESTIMATED_TIME) {
+            if (lastWinner == agent.id()) {
+                // todo: dodaj na kraj samo
+
+                this.wonTasksMap.put(lastTask.id, lastTask);
+            }
+            return;
+        }
 
         agentsBidStrategy.updateTables(lastTask, lastWinner, lastOffers);
 
-        // todo: calculate the bid based on agent bids and task distribution
-        // I won the auction, add it to optimal position in my current tasks
+        // I won the auction, my solution is now next bid solution
         if (lastWinner == agent.id()) {
             taskDistributionStrategy.appendWonTask(lastTask);
-            TaskModel pickupTask = new TaskModel(lastTask, TaskTypeEnum.PICKUP);
-            TaskModel deliveryTask = new TaskModel(lastTask, TaskTypeEnum.DELIVERY);
+            currentSolution = nextBidSolution;
 
-            if (this.taskModels.isEmpty()) {
-                estimateSolutionStrategy.addFirstTaskToSolution(pickupTask, deliveryTask);
-                solutionModel = estimateSolutionStrategy.getSolution();
-            } else {
-                // find optimal place
-                SolutionModel newSolution = estimateSolutionStrategy.optimalSolutionWithTask(pickupTask, deliveryTask);
-                // todo: use marginal cost
-                double marginalCost = newSolution.getCost() - solutionModel.getCost();
-                estimateSolutionStrategy.setSolution(newSolution);
-                solutionModel = estimateSolutionStrategy.getSolution();
-            }
-
-            this.taskModels.add(new TaskModel(lastTask, TaskTypeEnum.PICKUP));
-            this.taskModels.add(new TaskModel(lastTask, TaskTypeEnum.DELIVERY));
+            this.wonTasksMap.put(lastTask.id, lastTask);
         }
-
-//        System.out.println("VREME ZA TASK: ");
-//        long now = System.currentTimeMillis() - startBidTime;
-//        if (now > maxBidTime) {
-//            maxBidTime = now;
-//        }
-//        System.out.println(now);
+        nextBidSolution = new SolutionModel(currentSolution);
     }
 
     @Override
     public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
-//        System.out.println("MAX BID:");
-        // 300 taskova -> 7374
-        // 50 taskova -> 3653
-//        System.out.println(maxBidTime);
         long startTime = System.currentTimeMillis();
 
+        System.out.println(wonTasksMap);
+        System.out.println(tasks);
+
         System.out.println("Initial plan:");
-        for (Map.Entry<Vehicle, ArrayList<TaskModel>> entry : solutionModel.getVehicleTasksMap().entrySet()) {
+        for (Map.Entry<Vehicle, ArrayList<TaskModel>> entry : currentSolution.getVehicleTasksMap().entrySet()) {
             Vehicle vehicle = entry.getKey();
+            // change tasks because their rewards have changed after auction
+            ArrayList<TaskModel> newTaskModels = new ArrayList<>();
+            for (TaskModel taskModel : entry.getValue()) {
+                newTaskModels.add(new TaskModel(this.wonTasksMap.get(taskModel.getTask().id), taskModel.getType()));
+            }
+            currentSolution.getVehicleTasksMap().put(vehicle, newTaskModels);
+
             System.out.print(String.format("Vehicle: %d | Number of tasks: %d | Cost: %.2f",
-                    vehicle.id(), entry.getValue().size() / 2, solutionModel.getVehicleCostMap().get(vehicle)));
+                    vehicle.id(), entry.getValue().size() / 2, currentSolution.getVehicleCostMap().get(vehicle)));
             System.out.println(" | Tasks: " + entry.getValue());
         }
         System.out.println();
 
         CentralizedSLS sls = new CentralizedSLS(vehicles, tasks,
-                planTimeout - (System.currentTimeMillis() - startTime) - PLAN_CREATION_TIME,
-                p, alpha, beta, solutionModel);
+                planTimeout - (System.currentTimeMillis() - startTime) - PLAN_CREATION_ESTIMATED_TIME,
+                p, alpha, beta, currentSolution);
 
         sls.SLS();
         SolutionModel solution = sls.getBestSolution();
