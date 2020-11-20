@@ -1,6 +1,7 @@
 package strategy;
 
 import enums.TaskTypeEnum;
+import javafx.concurrent.Task;
 import logist.simulation.Vehicle;
 import logist.topology.Topology.City;
 import models.SolutionModel;
@@ -135,5 +136,45 @@ public class EstimateSolutionStrategy {
 
         solution.setCost(cost);
         return cost;
+    }
+
+    /**
+     * Adds the task to the end of the route for a vehicle it can fit in.
+     *
+     * @param solution     - solution to which we add the task
+     * @param pickupTask   - task model for pick up
+     * @param deliveryTask - task model for delivery
+     * @return - solution with added task
+     */
+    public static SolutionModel addTaskToEnd(SolutionModel solution,
+                                             TaskModel pickupTask, TaskModel deliveryTask) {
+        for (Map.Entry<Vehicle, ArrayList<TaskModel>> entry : solution.getVehicleTasksMap().entrySet()) {
+            Vehicle vehicle = entry.getKey();
+            double vehicleCost = solution.getVehicleCostMap().get(vehicle);
+
+            if (vehicle.capacity() > pickupTask.getTask().weight) {
+                ArrayList<TaskModel> taskModels = new ArrayList<>(entry.getValue());
+                taskModels.add(pickupTask);
+                taskModels.add(deliveryTask);
+                solution.getTaskPairIndexMap().put(pickupTask, taskModels.indexOf(deliveryTask));
+                solution.getTaskPairIndexMap().put(deliveryTask, taskModels.indexOf(pickupTask));
+                solution.getVehicleTasksMap().put(vehicle, taskModels);
+
+                // distance to pick up new task and deliver it
+                double additionalDistance = pickupTask.getTask().pickupCity.distanceTo(deliveryTask.getTask().deliveryCity);
+                if (taskModels.size() > 2) {
+                    additionalDistance += taskModels.get(taskModels.size() - 3).getTask().deliveryCity.
+                            distanceTo(pickupTask.getTask().pickupCity);
+                } else {
+                    additionalDistance += vehicle.getCurrentCity().distanceTo(pickupTask.getTask().pickupCity);
+                }
+                double newVehicleCost = vehicleCost + additionalDistance * vehicle.costPerKm();
+                solution.getVehicleCostMap().put(vehicle, newVehicleCost);
+                solution.setCost(solution.getCost() - vehicleCost + newVehicleCost);
+
+                break;
+            }
+        }
+        return solution;
     }
 }

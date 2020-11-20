@@ -113,28 +113,28 @@ public class AuctionMain implements AuctionBehavior {
             return null;
         }
 
-        // if bid time is not long enough for our strategy agent bids the approximated maximal marginal cost
-        if (bidTimeout < BID_ESTIMATED_TIME) {
-            long distance = (long) (agentsBidStrategy.getBiggestCityDistance() +
-                    task.pickupCity.distanceUnitsTo(task.deliveryCity));
-            return distance * maxCapacity;
-        }
-
         TaskModel pickupTask = new TaskModel(task, TaskTypeEnum.PICKUP);
         TaskModel deliveryTask = new TaskModel(task, TaskTypeEnum.DELIVERY);
 
-        // create best next solution if agent receives the auction task and calculate the marginal cost
-        long marginalCost;
         if (this.wonTasksMap.isEmpty()) {
             nextBidSolution = EstimateSolutionStrategy.addFirstTaskToSolution(new SolutionModel(currentSolution),
                     pickupTask, deliveryTask);
-            marginalCost = (long) nextBidSolution.getCost();
-        } else {
-            // find optimal solution with auction task
+        }
+        // if bid time is not long enough for our strategy agent bids the approximated maximal marginal cost
+        else if (bidTimeout < BID_ESTIMATED_TIME) {
+            nextBidSolution = EstimateSolutionStrategy.addTaskToEnd(new SolutionModel(currentSolution),
+                    pickupTask, deliveryTask);
+
+            long distance = (long) (agentsBidStrategy.getBiggestCityDistance() +
+                    task.pickupCity.distanceUnitsTo(task.deliveryCity));
+            return (long) (distance * task.weight * discount / 100);
+        }
+        // create best next solution if agent receives the auction task
+        else {
             nextBidSolution = EstimateSolutionStrategy.optimalSolutionWithTask(new SolutionModel(currentSolution),
                     pickupTask, deliveryTask);
-            marginalCost = (long) (nextBidSolution.getCost() - currentSolution.getCost());
         }
+        long marginalCost = (long) (nextBidSolution.getCost() - currentSolution.getCost());
         System.out.println("\nMarginal cost : " + marginalCost);
 
         Long myBid = agentsBidStrategy.calculateMyBid(task, marginalCost);
@@ -160,18 +160,9 @@ public class AuctionMain implements AuctionBehavior {
                     lastOffers[agent.id()], diffFromOptimal));
         }
 
-        // if bid time is not long enough for our strategy and we have won the task agents just adds the task at the
-        // end of the route
-        if (bidTimeout < BID_ESTIMATED_TIME) {
-            if (lastWinner == agent.id()) {
-                // todo: dodaj na kraj samo
-
-                this.wonTasksMap.put(lastTask.id, lastTask);
-            }
-            return;
+        if (bidTimeout > BID_ESTIMATED_TIME) {
+            agentsBidStrategy.updateTables(lastTask, lastWinner, lastOffers);
         }
-
-        agentsBidStrategy.updateTables(lastTask, lastWinner, lastOffers);
 
         // I won the auction, my solution is now next bid solution
         if (lastWinner == agent.id()) {
