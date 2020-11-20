@@ -8,11 +8,20 @@ import java.util.Set;
 
 public class TaskDistributionStrategy {
 
-    private TaskDistribution distribution;
-    private Set<Task> wonTasks;
+    //TODO
+    private static double PROBABILITY_THRESHOLD = 0.2;
+    //TODO
+    private static double DISCOUNT = 0.25;
 
-    public TaskDistributionStrategy(TaskDistribution distribution) {
+    private TaskDistribution distribution;
+    // the tasks that the agent already won in the auction
+    private Set<Task> wonTasks;
+    // approximation for cost per kilometer for other agents
+    private double approximatedVehicleCost;
+
+    public TaskDistributionStrategy(TaskDistribution distribution, double approximatedVehicleCost) {
         this.distribution = distribution;
+        this.approximatedVehicleCost = approximatedVehicleCost;
         this.wonTasks = new HashSet<>();
     }
 
@@ -37,5 +46,16 @@ public class TaskDistributionStrategy {
 
     public void appendWonTask(Task task) {
         wonTasks.add(task);
+    }
+
+    public Long refineBid(Task task, Long marginalCost, Long myBid) {
+        double speculatedProbability = speculateOnTaskDistribution(task);
+        System.out.println("Speculated probability: " + speculatedProbability);
+        if (speculatedProbability > PROBABILITY_THRESHOLD && myBid == marginalCost) {
+            System.out.println("Decided to bid lower!");
+            //myBid = (long) (0.95 * myBid);
+            myBid -= (long) (DISCOUNT * task.pickupCity.distanceTo(task.deliveryCity) * approximatedVehicleCost);
+        }
+        return myBid;
     }
 }

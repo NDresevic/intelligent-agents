@@ -40,6 +40,9 @@ public class AuctionMain implements AuctionBehavior {
     private long bidTimeout;
     // upper bound time needed to create plan from optimal solution
     private static long PLAN_CREATION_TIME = 500;
+    //approximation for others vehicles cost per km (approximate that all vehicles from other agents have average
+    //      capacity of our agent vehicles)
+    private double approximatedVehicleCost;
 
     // parameters defined in config file /agents.xml
     private double p;
@@ -52,6 +55,10 @@ public class AuctionMain implements AuctionBehavior {
         this.agent = agent;
         this.taskModels = new ArrayList<>();
         this.solutionModel = new SolutionModel(agent.vehicles());
+        // approximate that all vehicles from other agents have average capacity of our agent vehicles
+        this.approximatedVehicleCost = agent.vehicles().stream().map(Vehicle::costPerKm).reduce(0, Integer::sum)
+                * 1.0 / agent.vehicles().size();
+        System.err.println(approximatedVehicleCost);
 
         // this code is used to get the timeouts
         try {
@@ -73,8 +80,8 @@ public class AuctionMain implements AuctionBehavior {
         this.beta = agent.readProperty("beta", Double.class, 0.4);
         this.epsilon = agent.readProperty("epsilon", Double.class, 0.1);
 
-        this.agentsBidStrategy = new AgentsBidStrategy(epsilon, topology, agent);
-        this.taskDistributionStrategy = new TaskDistributionStrategy(distribution);
+        this.agentsBidStrategy = new AgentsBidStrategy(epsilon, topology, agent, approximatedVehicleCost);
+        this.taskDistributionStrategy = new TaskDistributionStrategy(distribution, approximatedVehicleCost);
         this.estimateSolutionStrategy = new EstimateSolutionStrategy(solutionModel);
     }
 
@@ -92,39 +99,10 @@ public class AuctionMain implements AuctionBehavior {
                 * vehicle.costPerKm()));
         System.out.println("\nMarginal cost : " + marginalCost);
 
-        double speculatedProbability = taskDistributionStrategy.speculateOnTaskDistribution(task);
-        agentsBidStrategy.extractBidPriceForOthers(task);
+        Long myBid = agentsBidStrategy.calculateMyBid(task, marginalCost);
+        myBid = taskDistributionStrategy.refineBid(task, marginalCost, myBid);
 
-        Long bidOfOtherAgents = agentsBidStrategy.getExtractedBid();
-        double beliefForExtractedBid = agentsBidStrategy.getBeliefForExtractedBid();
-        System.out.println(String.format("\nExtracted bid: %d | Speculated probability: %f",
-                bidOfOtherAgents, speculatedProbability));
-        System.out.println("Belief: " + beliefForExtractedBid);
-        Long approximateBidOfOthers;
-
-        if(bidOfOtherAgents != null)
-            approximateBidOfOthers = (long) Math.ceil(beliefForExtractedBid * bidOfOtherAgents + (1 - beliefForExtractedBid) * marginalCost) - 1;
-        else
-            approximateBidOfOthers = (long) Math.ceil(marginalCost) - 1;
-        System.out.println("Approximated bid: " + approximateBidOfOthers);
-
-        //Long myBid = Math.max(approximateBidOfOthers - 1, Math.ceil(marginalCost));
-        Long myBid;
-        if (approximateBidOfOthers > marginalCost)
-            myBid = approximateBidOfOthers;
-        else
-            myBid = marginalCost;
-
-
-        if (speculatedProbability > 0.2 && myBid == marginalCost) {
-            System.out.println("Decided to bid lower!");
-            //myBid = (long) (0.95 * myBid);
-            myBid -= (long) (0.25 * task.pickupCity.distanceTo(task.deliveryCity) * agent.vehicles().get(0).costPerKm());
-        }
         System.out.println("My bid: " + myBid);
-
-        System.out.println("Speculated probability: " + speculatedProbability);
-
         return myBid;
     }
 

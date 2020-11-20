@@ -23,24 +23,18 @@ public class AgentsBidStrategy {
     // [city -> list of ids of cities that are epsilon-close to city ordered by distance]
     // city1 is epsilon close to a city2 iff distance(city1, city) < epsilon * biggest distance between 2 cities
     private Map<City, List<Integer>> epsilonCloseCityIdsMap;
+    //approximate what other bidders would bid for the last task
     // approximation for cost per kilometer for other agents
     private double approximatedVehicleCost;
-    //approximate what other bidders would bid for the last task
-    private Long extractedBid;
-    //belief for the extracted bid
-    private double beliefForExtractedBid;
 
-    public AgentsBidStrategy(Double epsilon, Topology topology, Agent agent) {
+    public AgentsBidStrategy(Double epsilon, Topology topology, Agent agent, double approximatedVehicleCost) {
         this.epsilon = epsilon;
         this.topology = topology;
+        this.approximatedVehicleCost = approximatedVehicleCost;
         this.agentEstimatedCostsMap = new HashMap<>();
         this.idCityMap = new HashMap<>();
         this.closeCitiesMap = new HashMap<>();
         this.epsilonCloseCityIdsMap = new HashMap<>();
-        // approximate that all vehicles from other agents have average capacity of our agent vehicles
-        this.approximatedVehicleCost = agent.vehicles().stream().map(Vehicle::costPerKm).reduce(0, Integer::sum)
-                * 1.0 / agent.vehicles().size();
-
         this.initializeCityAndDistanceMaps();
     }
 
@@ -179,13 +173,19 @@ public class AgentsBidStrategy {
     }
 
     /**
-     * extract minimum of approximations for [task.piskup id, task.delivery id] for all opponents
-     * count belief for the approximation =  number of non-null values / number of opponents
+     *
      * @param task
+     * @param marginalCost
+     * @return
      */
-    public void extractBidPriceForOthers(Task task) {
+    public Long calculateMyBid(Task task, Long marginalCost){
+        Long extractedBidOfOthers;
+        double beliefForExtractedBid;
+
+        //extract minimum of approximations for [task.piskup id, task.delivery id] for all opponents
+        //     count belief for the approximation =  number of non-null values / number of opponents
         if (agentEstimatedCostsMap.isEmpty()) {
-            extractedBid = null;
+            extractedBidOfOthers = null;
             beliefForExtractedBid = 0;
         } else {
             Double minBid = Double.MAX_VALUE;
@@ -198,17 +198,21 @@ public class AgentsBidStrategy {
                 else if (bid < minBid)
                     minBid = bid;
             }
-            extractedBid = minBid != Double.MAX_VALUE ? (long) Math.ceil(minBid) : null;
-            beliefForExtractedBid = filledEntries / numberOfOtherAgents;
+            extractedBidOfOthers = minBid != Double.MAX_VALUE ? (long) Math.ceil(minBid) : null;
+            beliefForExtractedBid = filledEntries * 1.0 / numberOfOtherAgents;
+
+            System.out.println(String.format("\nExtracted bid: %d" , extractedBidOfOthers));
+            System.out.println("Belief: " + beliefForExtractedBid);
         }
-    }
 
-    public Long getExtractedBid() {
-        return extractedBid;
-    }
+        //TODO : elaboriraj
+        Long approximateBidOfOthers = extractedBidOfOthers != null ?
+                (long) Math.ceil(beliefForExtractedBid * extractedBidOfOthers + (1 - beliefForExtractedBid) * marginalCost) - 1 :
+                (long) Math.ceil(marginalCost) - 1;
+        System.out.println("Approximated bid: " + approximateBidOfOthers);
 
-    public double getBeliefForExtractedBid() {
-        return beliefForExtractedBid;
+        return approximateBidOfOthers > marginalCost ? approximateBidOfOthers : (long) Math.ceil(marginalCost);
+        //return Math.max(approximateBidOfOthers - 1, Math.ceil(marginalCost));
     }
 
     public Map<Integer, Double[][]> getAgentEstimatedCostsMap() {
