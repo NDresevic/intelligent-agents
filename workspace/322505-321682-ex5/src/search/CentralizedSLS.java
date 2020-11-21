@@ -1,7 +1,6 @@
 package search;
 
 import logist.simulation.Vehicle;
-import logist.task.TaskSet;
 import models.SolutionModel;
 import models.TaskModel;
 import operations.ChangeVehicleOperation;
@@ -14,29 +13,19 @@ public class CentralizedSLS {
     // approximate upper bound for execution time of neighbor exploration in stochastic search
     private static long NEIGHBOUR_EXPLORATION_TIME = 1000;
 
-    // used for iteration count of operation swap tasks
-    private final double ALPHA;
-    // used for iteration count of change task vehicle operation
-    private final double BETA;
     // the initial constant for simulated annealing
+    // TODO: SET THIS PARAMETER -> NOW IT IS ALWAYS 0
     private double simulatedAnnealingParam;
 
-    private final double p;
     // any city maps to the closest vehicle (based on vehicle home town)
     private final List<Vehicle> vehicleList;
-    private final TaskSet tasks;
 
     private SolutionModel bestSolution;
     private long remainingTime;
 
-    public CentralizedSLS(List<Vehicle> vehicleList, TaskSet tasks,
-                          long remainingTime, double p, double alpha, double beta, SolutionModel initialSolution) {
+    public CentralizedSLS(List<Vehicle> vehicleList, long remainingTime, SolutionModel initialSolution) {
         this.vehicleList = vehicleList;
-        this.tasks = tasks;
         this.remainingTime = remainingTime;
-        this.p = p;
-        this.ALPHA = alpha;
-        this.BETA = beta;
         this.bestSolution = initialSolution;
     }
 
@@ -44,33 +33,28 @@ public class CentralizedSLS {
         SolutionModel currentSolution = bestSolution;
 
         int count = 0;
-        double acceptanceProbability;
         while (remainingTime > NEIGHBOUR_EXPLORATION_TIME) {
             long loopStartTime = System.currentTimeMillis();
 
             SolutionModel bestNeighbor = chooseNeighbors(currentSolution);
             if (bestNeighbor != null) {
 
-//                double randomDouble = new Random().nextDouble();
-//                if (randomDouble <= p) {
-//                    currentSolution = bestNeighbor;
-//                }
-
                 double randomDouble = new Random().nextDouble();
-                if (randomDouble < Math.exp(-simulatedAnnealingParam * (bestNeighbor.getCost() - currentSolution.getCost()))) {
+                if (randomDouble < Math.exp(-simulatedAnnealingParam *
+                        (bestNeighbor.getCost() - currentSolution.getCost()))) {
                     currentSolution = bestNeighbor;
                 }
 
                 bestSolution = bestNeighbor.getCost() < bestSolution.getCost() ? bestNeighbor : bestSolution;
 
                 if (count % 1000 == 0) {
-                    System.out.println(String.format("Iteration: %d | Best cost: %.2f | Current cost: %.2f"
-                            , count, bestSolution.getCost(), currentSolution.getCost()));
+                    System.out.println(String.format("Iteration: %d | Best cost: %.2f | Current cost: %.2f",
+                            count, bestSolution.getCost(), currentSolution.getCost()));
                 }
                 count++;
             }
 
-            if (count % 50000 == 0){
+            if (count % 50000 == 0) {
                 simulatedAnnealingParam *= 1.1;
             }
 
@@ -79,12 +63,15 @@ public class CentralizedSLS {
     }
 
     /**
-     * version 2
+     * Creates neighbour solution from the current solution and returns the best one. The transitions (operations) done
+     * on current solution to get the neighbor solutions can be switching order of the task in one vehicle or removing
+     * one task from a vehicle and adding it as the last task of some other vehicle. For the current solution we pick
+     * one random vehicle (v1) and apply operation that switches tasks for each task, plus for each vehicle (v2) we try
+     * to give one randomly chosen task to the previously picked random vehicle (v1).
      *
-     * @param currentSolution
-     * @return
+     * @param currentSolution - current best solution
+     * @return - best solution out of neighbour solutions
      */
-    // todo: refactor this and delete first version if we decide this way is better - compare performance of both v!!!
     private SolutionModel chooseNeighbors(SolutionModel currentSolution) {
         Map<Vehicle, ArrayList<TaskModel>> map = currentSolution.getVehicleTasksMap();
 
@@ -122,64 +109,6 @@ public class CentralizedSLS {
 
             int i = new Random().nextInt(map.get(v2).size());
             neighbor = new ChangeVehicleOperation(currentSolution, v2, v1, i).getNewSolution();
-
-            if (neighbor != null) {
-                if (currentBestNeighbors.isEmpty() || neighbor.getCost() < bestNeighborCost) {
-                    bestNeighborCost = neighbor.getCost();
-                    currentBestNeighbors = new ArrayList<>();
-                    currentBestNeighbors.add(neighbor);
-                } else if (neighbor.getCost() == bestNeighborCost) {
-                    currentBestNeighbors.add(neighbor);
-                }
-            }
-        }
-
-        // choose random best neighbor
-        if (!currentBestNeighbors.isEmpty())
-            return currentBestNeighbors.get(new Random().nextInt(currentBestNeighbors.size()));
-        return null;
-    }
-
-    /**
-     * version 1
-     * Creating neighbours by iterating using the ALPHA and BETA parameters read from config.
-     *
-     * @param currentSolution
-     * @return
-     */
-    private SolutionModel chooseNeighborsWithAlphaBeta(SolutionModel currentSolution) {
-        Map<Vehicle, ArrayList<TaskModel>> map = currentSolution.getVehicleTasksMap();
-
-        // the neighbors of the current solution that have the same cost as the best neighbor of the current solution
-        List<SolutionModel> currentBestNeighbors = new ArrayList<>();
-        double bestNeighborCost = Double.MAX_VALUE;
-        int alphaIterCount = (int) (ALPHA * vehicleList.size());
-        int betaIterCount = (int) (BETA * 2 * tasks.size());
-
-        SolutionModel neighbor;
-        for (int k = 0; k < alphaIterCount + betaIterCount; k++) {
-            Vehicle v1 = vehicleList.get(new Random().nextInt(vehicleList.size()));
-
-            // swap two tasks for a vehicle
-            if (k < alphaIterCount) {
-                if (map.get(v1).size() < 1) { // continue cause chosen vehicle doesn't have any task
-                    continue;
-                }
-
-                int i = new Random().nextInt(map.get(v1).size());
-                int j = new Random().nextInt(map.get(v1).size());
-                neighbor = new SwapTasksOperation(currentSolution, i, j, v1).getNewSolution();
-            }
-            // give a random task of a random vehicle to other random vehicle (append to the end of its plan)
-            else {
-                Vehicle v2 = vehicleList.get(new Random().nextInt(vehicleList.size()));
-                if (v1.equals(v2) || map.get(v1).size() < 1) {
-                    continue;
-                }
-
-                int i = new Random().nextInt(map.get(v1).size());
-                neighbor = new ChangeVehicleOperation(currentSolution, v1, v2, i).getNewSolution();
-            }
 
             if (neighbor != null) {
                 if (currentBestNeighbors.isEmpty() || neighbor.getCost() < bestNeighborCost) {

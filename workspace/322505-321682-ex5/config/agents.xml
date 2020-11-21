@@ -13,9 +13,6 @@
         <set class-path="bin/"/>
         <set class-name="agents.AuctionMain"/>
 
-        <set p="0.4"/>
-        <set alpha="4.0"/>
-        <set beta="0.2"/>
         <set epsilon="0.3"/>
 		<set discount="0.5"/>
 	</agent>

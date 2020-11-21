@@ -55,9 +55,6 @@ public class AuctionMain implements AuctionBehavior {
     private double approximatedVehicleCost;
 
     // parameters defined in config file /agents.xml
-    private double p;
-    private double alpha;
-    private double beta;
     private double epsilon;
     private double discount;
 
@@ -90,9 +87,6 @@ public class AuctionMain implements AuctionBehavior {
         }
 
         // loading model parameters
-        this.p = agent.readProperty("p", Double.class, 0.4);
-        this.alpha = agent.readProperty("alpha", Double.class, 4.0);
-        this.beta = agent.readProperty("beta", Double.class, 0.4);
         this.epsilon = agent.readProperty("epsilon", Double.class, 0.1);
         this.discount = agent.readProperty("discount", Double.class, 0.1);
 
@@ -138,7 +132,6 @@ public class AuctionMain implements AuctionBehavior {
             nextBidSolution = EstimateSolutionStrategy.optimalSolutionWithTask(new SolutionModel(currentSolution),
                     pickupTask, deliveryTask);
         }
-
 
 
         long marginalCost = (long) (nextBidSolution.getCost() - currentSolution.getCost());
@@ -204,9 +197,9 @@ public class AuctionMain implements AuctionBehavior {
         }
         System.out.println();
 
-        CentralizedSLS sls = new CentralizedSLS(vehicles, tasks,
+        CentralizedSLS sls = new CentralizedSLS(vehicles,
                 planTimeout - (System.currentTimeMillis() - startTime) - PLAN_CREATION_ESTIMATED_TIME,
-                p, alpha, beta, currentSolution);
+                currentSolution);
 
         sls.SLS();
         SolutionModel solution = sls.getBestSolution();
