@@ -1,7 +1,6 @@
 package strategy;
 
 import enums.TaskTypeEnum;
-import javafx.concurrent.Task;
 import logist.simulation.Vehicle;
 import logist.topology.Topology.City;
 import models.SolutionModel;

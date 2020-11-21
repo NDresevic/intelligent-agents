@@ -91,16 +91,15 @@ public class AuctionMain implements AuctionBehavior {
         this.alpha = agent.readProperty("alpha", Double.class, 4.0);
         this.beta = agent.readProperty("beta", Double.class, 0.4);
         this.epsilon = agent.readProperty("epsilon", Double.class, 0.1);
-        this.discount = agent.readProperty("epsilon", Double.class, 0.5);
+        this.discount = agent.readProperty("discount", Double.class, 0.1);
 
         if (setupTimeout < System.currentTimeMillis() - startTime - SETUP_ESTIMATED_TIME) {
             System.err.println("Setup time is not long enough for the preprocessing. The planning is terminated.");
             System.exit(1);
         }
 
-        this.agentsBidStrategy = new AgentsBidStrategy(epsilon, topology, approximatedVehicleCost);
+        this.agentsBidStrategy = new AgentsBidStrategy(epsilon, topology, approximatedVehicleCost, agent.id());
         this.taskDistributionStrategy = new TaskDistributionStrategy(distribution, approximatedVehicleCost);
-
         for (Vehicle vehicle : agent.vehicles()) {
             this.maxCapacity = Math.max(vehicle.capacity(), maxCapacity);
         }
@@ -120,20 +119,24 @@ public class AuctionMain implements AuctionBehavior {
             nextBidSolution = EstimateSolutionStrategy.addFirstTaskToSolution(new SolutionModel(currentSolution),
                     pickupTask, deliveryTask);
         }
+
         // if bid time is not long enough for our strategy agent bids the approximated maximal marginal cost
         else if (bidTimeout < BID_ESTIMATED_TIME) {
             nextBidSolution = EstimateSolutionStrategy.addTaskToEnd(new SolutionModel(currentSolution),
                     pickupTask, deliveryTask);
 
             long distance = (long) (agentsBidStrategy.getBiggestCityDistance() +
-                    task.pickupCity.distanceUnitsTo(task.deliveryCity));
-            return (long) (distance * task.weight * discount / 100);
+                    task.pickupCity.distanceTo(task.deliveryCity));
+            return (long) (distance * discount * this.approximatedVehicleCost);
         }
         // create best next solution if agent receives the auction task
         else {
             nextBidSolution = EstimateSolutionStrategy.optimalSolutionWithTask(new SolutionModel(currentSolution),
                     pickupTask, deliveryTask);
         }
+
+
+
         long marginalCost = (long) (nextBidSolution.getCost() - currentSolution.getCost());
         System.out.println("\nMarginal cost : " + marginalCost);
 
@@ -142,9 +145,8 @@ public class AuctionMain implements AuctionBehavior {
 
         if (myBid <= 1) {
             myBid = (long) (this.discount *
-                    task.pickupCity.distanceUnitsTo(task.deliveryCity) * approximatedVehicleCost);
+                    task.pickupCity.distanceTo(task.deliveryCity) * this.approximatedVehicleCost);
         }
-
         return myBid;
     }
 
