@@ -33,8 +33,10 @@ public class AuctionMain implements AuctionBehavior {
     private SolutionModel nextBidSolution;
     private AgentsBidStrategy agentsBidStrategy;
     private TaskDistributionStrategy taskDistributionStrategy;
-    // capacity of a vehicle with biggest capacity - this is used to check if it is possible to carry new task
+    // capacity of a vehicle with biggest capacity - used to check if it is possible to carry new task
     private int maxCapacity;
+    // maximum marginal cost that agent has bid - used for calculating  bid for a task where others bid null
+    private long maxMarginalCost;
 
     // parameters defined in config file /settings_auction.xml
     private long setupTimeout;
@@ -71,6 +73,7 @@ public class AuctionMain implements AuctionBehavior {
         this.approximatedVehicleCost = agent.vehicles().stream().map(Vehicle::costPerKm).reduce(0, Integer::sum)
                 * 1.0 / agent.vehicles().size();
         this.maxCapacity = Integer.MIN_VALUE;
+        this.maxMarginalCost = Long.MIN_VALUE;
 
         // this code is used to get the timeouts
         try {
@@ -119,7 +122,6 @@ public class AuctionMain implements AuctionBehavior {
             nextBidSolution = EstimateSolutionStrategy.addFirstTaskToSolution(new SolutionModel(currentSolution),
                     pickupTask, deliveryTask);
         }
-
         // if bid time is not long enough for our strategy agent bids the approximated maximal marginal cost
         else if (bidTimeout < BID_ESTIMATED_TIME) {
             nextBidSolution = EstimateSolutionStrategy.addTaskToEnd(new SolutionModel(currentSolution),
@@ -127,7 +129,9 @@ public class AuctionMain implements AuctionBehavior {
 
             long distance = (long) (agentsBidStrategy.getBiggestCityDistance() +
                     task.pickupCity.distanceTo(task.deliveryCity));
-            return (long) (distance * discount * this.approximatedVehicleCost);
+            long marginalCost = (long) (distance * discount * this.approximatedVehicleCost);
+            this.maxMarginalCost = Math.max(marginalCost, maxMarginalCost);
+            return marginalCost;
         }
         // create best next solution if agent receives the auction task
         else {
@@ -138,7 +142,8 @@ public class AuctionMain implements AuctionBehavior {
 
 
         long marginalCost = (long) (nextBidSolution.getCost() - currentSolution.getCost());
-        System.out.println("\nMarginal cost : " + marginalCost);
+        this.maxMarginalCost = Math.max(marginalCost, maxMarginalCost);
+        System.out.println("\nMarginal cost: " + marginalCost);
 
         Long myBid = agentsBidStrategy.calculateMyBid(task, marginalCost);
         myBid = taskDistributionStrategy.refineBid(task, marginalCost, myBid);
@@ -163,7 +168,7 @@ public class AuctionMain implements AuctionBehavior {
         }
 
         if (bidTimeout > BID_ESTIMATED_TIME) {
-            agentsBidStrategy.updateTables(lastTask, lastWinner, lastOffers);
+            agentsBidStrategy.updateTables(lastTask, lastWinner, lastOffers, maxMarginalCost);
         }
 
         // I won the auction, my solution is now next bid solution

@@ -54,7 +54,6 @@ public class AuctionTemplate implements AuctionBehavior {
 
     @Override
     public Long askPrice(Task task) {
-
         if (vehicle.capacity() < task.weight)
             return null;
 

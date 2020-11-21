@@ -9,7 +9,7 @@ import java.util.stream.Collectors;
 
 public class AgentsBidStrategy {
 
-    //TODO what is epsilon
+    //TODO: EXPLAIN what is epsilon
     private Double epsilon;
     private Topology topology;
     //the id of the agent
@@ -29,10 +29,6 @@ public class AgentsBidStrategy {
     private double approximatedVehicleCost;
     // biggest distance between 2 cities
     private long biggestCityDistance;
-
-    //upper bidding limit
-    // one would bid this if it approximated that other agents would bid nulls
-    private static final double UPPER_BIDDING_LIMIT = 100000.0;
 
     public AgentsBidStrategy(Double epsilon, Topology topology, double approximatedVehicleCost, Integer agentId) {
         this.epsilon = epsilon;
@@ -129,7 +125,10 @@ public class AgentsBidStrategy {
      * @param lastWinner
      * @param lastOffers
      */
-    public void updateTables(Task lastTask, int lastWinner, Long[] lastOffers) {
+    public void updateTables(Task lastTask, int lastWinner, Long[] lastOffers, long maxMarginalCost) {
+        // one would bid this if it approximated that other agents would bid nulls
+        double upper_bidding_limit = maxMarginalCost * 10;
+
         for (int i = 0; i < lastOffers.length; i++) {
             if (i == agentId) {
                 //tables are only for other agents
@@ -141,7 +140,7 @@ public class AgentsBidStrategy {
             if (lastWinner == i) {
                 futureBid = 0.0;
             } else if (lastOffers[i] == null) {
-                futureBid = UPPER_BIDDING_LIMIT;
+                futureBid = upper_bidding_limit;
             } else {
                 futureBid = lastOffers[i];
             }
@@ -158,7 +157,7 @@ public class AgentsBidStrategy {
                 City epsilonCloseCity = idCityMap.get(id);
                 //future bid is UPPER_BIDDING_LIMIT if the bidder bidded null in the auction
                 //      in that case we approximate that it would also bid null for epsilon close cities
-                double approxCost = futureBid == UPPER_BIDDING_LIMIT ? UPPER_BIDDING_LIMIT
+                double approxCost = futureBid == upper_bidding_limit ? upper_bidding_limit
                         //otherwise we approximate the bid for the future
                         : futureBid + approximatedVehicleCost * epsilonCloseCity.distanceTo(lastTask.deliveryCity);
                 costs[lastTask.pickupCity.id][epsilonCloseCity.id] =
@@ -172,7 +171,7 @@ public class AgentsBidStrategy {
             List<Integer> epsilonCloseCitiesPickup = epsilonCloseCityIdsMap.get(lastTask.pickupCity);
             for (Integer id : epsilonCloseCitiesPickup) {
                 City epsilonCloseCity = idCityMap.get(id);
-                double approxCost = futureBid == UPPER_BIDDING_LIMIT ? UPPER_BIDDING_LIMIT
+                double approxCost = futureBid == upper_bidding_limit ? upper_bidding_limit
                         : lastOffers[i] + approximatedVehicleCost * epsilonCloseCity.distanceTo(lastTask.pickupCity);
                 costs[epsilonCloseCity.id][lastTask.deliveryCity.id] =
                         costs[epsilonCloseCity.id][lastTask.deliveryCity.id] == null ?
@@ -181,13 +180,6 @@ public class AgentsBidStrategy {
                                 // bid minimum of previous and approximated info
                                 Math.min(costs[epsilonCloseCity.id][lastTask.deliveryCity.id], approxCost);
             }
-//            for (int j = 0; j < topology.cities().size(); j++) {
-//                for (int k = 0; k < topology.cities().size(); k++) {
-//                    System.out.print(costs[j][k]);
-//                    System.out.print(" ");
-//                }
-//                System.out.println();
-//            }
 
             agentEstimatedCostsMap.put(i, costs);
         }
