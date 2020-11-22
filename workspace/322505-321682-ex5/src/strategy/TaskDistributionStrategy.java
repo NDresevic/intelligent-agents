@@ -50,6 +50,10 @@ public class TaskDistributionStrategy {
      * @return
      */
     public Long refineBid(Task task, Long marginalCost, Long myBid) {
+        if (!myBid.equals(marginalCost)) {
+            return myBid;
+        }
+
         //speculates on the future tasks (the tasks that will show up for auction in the future)
         //calculate how likely is to have task [task.delivery, wontask.pickup] or [wontask.delivery, task.pickup]
         //in the future where won task is the task that the agent already won on the auction
@@ -69,7 +73,7 @@ public class TaskDistributionStrategy {
 
         //refining bid if the speculated probability is greater than the threshold
         //the final bid is calculated as (1 - DISCOUNT_DISTRIBUTION) * marginal cost
-        if (speculatedProbability > PROBABILITY_THRESHOLD && myBid == marginalCost) {
+        if (speculatedProbability > PROBABILITY_THRESHOLD) {
             System.out.println("Decided to bid lower!");
             myBid = (long) ((1 - DISTRIBUTION_DISCOUNT) * myBid);
         }
