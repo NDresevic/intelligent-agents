@@ -2,8 +2,11 @@ package strategy;
 
 import logist.task.Task;
 import logist.task.TaskDistribution;
+import logist.topology.Topology;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 public class TaskDistributionStrategy {
@@ -15,18 +18,22 @@ public class TaskDistributionStrategy {
     // how much the agent lowers the bid (percentage)
     private double DISTRIBUTION_DISCOUNT = 0.25;
 
+    // task distribution for given topology
     private TaskDistribution distribution;
+    //home cities for the agent
+    private List<Topology.City> agentHomeCities;
     // the tasks that the agent already won in the auction
     private Set<Task> wonTasks;
     // approximation for cost per kilometer for other agents
     private double approximatedVehicleCost;
 
-    public TaskDistributionStrategy(TaskDistribution distribution, double approximatedVehicleCost,
-                                    double probabilityThreshold, double distributionDiscount) {
+    public TaskDistributionStrategy(TaskDistribution distribution, double approximatedVehicleCost, double probabilityThreshold,
+                                    double distributionDiscount, List<Topology.City> agentHomeCities) {
         this.distribution = distribution;
         this.approximatedVehicleCost = approximatedVehicleCost;
         this.PROBABILITY_THRESHOLD = probabilityThreshold;
         this.DISTRIBUTION_DISCOUNT = distributionDiscount;
+        this.agentHomeCities = new ArrayList<>(agentHomeCities);
         this.wonTasks = new HashSet<>();
     }
 
@@ -54,7 +61,12 @@ public class TaskDistributionStrategy {
         for (Task wonTask : wonTasks) {
             double probDeliveryPickup = distribution.probability(wonTask.deliveryCity, task.pickupCity);
             double probPickupDelivery = distribution.probability(task.deliveryCity, wonTask.pickupCity);
-            speculatedProbability = Math.max(Math.max(probDeliveryPickup, probPickupDelivery), speculatedProbability);
+            double probHomeCity = 0.0;
+            for (Topology.City homeCity : agentHomeCities){
+                probHomeCity = Math.max(distribution.probability(homeCity, wonTask.pickupCity), probHomeCity);
+            }
+            speculatedProbability = Math.max(Math.max(probDeliveryPickup, probPickupDelivery),
+                    Math.max(probHomeCity,speculatedProbability));
         }
         System.out.println("Speculated probability: " + speculatedProbability);
 

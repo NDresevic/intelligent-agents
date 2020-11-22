@@ -21,6 +21,7 @@ import strategy.AgentsBidStrategy;
 
 import java.io.File;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class AuctionMain implements AuctionBehavior {
 
@@ -56,8 +57,8 @@ public class AuctionMain implements AuctionBehavior {
 
     // parameters defined in config file /agents.xml
     private double epsilon;
-    //
-    private double discount;
+    // the discount constant if there is not enough time for bidding
+    private double shortBidTimeoutDiscount;
     // threshold for speculated probability
     private double probabilityThreshold;
     // discount for the bid if it is payable
@@ -94,7 +95,7 @@ public class AuctionMain implements AuctionBehavior {
 
         // loading model parameters
         this.epsilon = agent.readProperty("epsilon", Double.class, 0.3);
-        this.discount = agent.readProperty("discount", Double.class, 0.5);
+        this.shortBidTimeoutDiscount = agent.readProperty("shortBidTimeoutDiscount", Double.class, 0.5);
         this.probabilityThreshold = agent.readProperty("probabilityThreshold", Double.class, 0.2);
         this.distributionDiscount = agent.readProperty("distributionDiscount", Double.class, 0.25);
 
@@ -104,8 +105,9 @@ public class AuctionMain implements AuctionBehavior {
         }
 
         this.agentsBidStrategy = new AgentsBidStrategy(epsilon, topology, approximatedVehicleCost, agent.id());
+        List<City> agentHomeCities = agent.vehicles().stream().map(v -> v.homeCity()).collect(Collectors.toList());
         this.taskDistributionStrategy = new TaskDistributionStrategy(distribution, approximatedVehicleCost,
-                probabilityThreshold, distributionDiscount);
+                probabilityThreshold, distributionDiscount, agentHomeCities);
         for (Vehicle vehicle : agent.vehicles()) {
             this.maxCapacity = Math.max(vehicle.capacity(), maxCapacity);
         }
@@ -132,7 +134,7 @@ public class AuctionMain implements AuctionBehavior {
 
             long distance = (long) (agentsBidStrategy.getBiggestCityDistance() +
                     task.pickupCity.distanceTo(task.deliveryCity));
-            long marginalCost = (long) (distance * discount * this.approximatedVehicleCost);
+            long marginalCost = (long) (distance * shortBidTimeoutDiscount * this.approximatedVehicleCost);
             this.maxMarginalCost = Math.max(marginalCost, maxMarginalCost);
             return marginalCost;
         }
@@ -151,7 +153,7 @@ public class AuctionMain implements AuctionBehavior {
         myBid = taskDistributionStrategy.refineBid(task, marginalCost, myBid);
 
         if (myBid <= 1) {
-            myBid = (long) (this.discount *
+            myBid = (long) (this.shortBidTimeoutDiscount *
                     task.pickupCity.distanceTo(task.deliveryCity) * this.approximatedVehicleCost);
         }
         return myBid;

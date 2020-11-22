@@ -186,8 +186,11 @@ public class AgentsBidStrategy {
 
     /**
      * Calculates the bid for the agent for given task and already calculated marginal cost
-     * extracts minimum for opponents
-     * 
+     * 1. extracts minimum for opponents
+     * 2. extracts belief for the approximation (unknown entries are null)
+     *          belief = known approximations / number of competitors
+     * 3. linearly approximates the bids for competitor (linearly depending on the extracted minimum and belief)
+     * 4. my bid = max (marginal cost, approximated bid for competitors - 1)
      * @param task
      * @param marginalCost
      * @return
@@ -229,7 +232,6 @@ public class AgentsBidStrategy {
         System.out.println("Approximated bid: " + approximateBidOfOthers);
 
         return approximateBidOfOthers > marginalCost ? approximateBidOfOthers : (long) Math.ceil(marginalCost);
-        //return Math.max(approximateBidOfOthers, Math.ceil(marginalCost));
     }
 
     public Map<Integer, Double[][]> getAgentEstimatedCostsMap() {
