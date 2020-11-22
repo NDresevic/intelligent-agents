@@ -217,7 +217,7 @@ public class AgentsBidStrategy {
                 }
             }
             // if we extracted any information, assign it to extracted bid
-            extractedBidOfOthers = minBid != Double.MAX_VALUE ? (long) Math.ceil(minBid) : null;
+            extractedBidOfOthers = minBid != Double.MAX_VALUE ? (long) Math.floor(minBid) : null;
             beliefForExtractedBid = filledEntries * 1.0 / numberOfOtherAgents;
 
             System.out.println(String.format("Extracted bid: %d", extractedBidOfOthers));
@@ -229,11 +229,11 @@ public class AgentsBidStrategy {
         // when belief=0 we bid our marginal cost (possibly we refine it after probability speculation)
         // otherwise it linearly approximates between marginal cost and extracted bid
         Long approximateBidOfOthers = extractedBidOfOthers != null ?
-                (long) (Math.ceil(beliefForExtractedBid * extractedBidOfOthers + (1 - beliefForExtractedBid) * marginalCost)) - 1 :
-                (long) (Math.ceil(marginalCost)) - 1;
+                (long) (Math.floor(beliefForExtractedBid * extractedBidOfOthers + (1 - beliefForExtractedBid) * marginalCost)) - 1 :
+                (long) (Math.floor(marginalCost)) - 1;
         System.out.println("Approximated bid: " + approximateBidOfOthers);
 
-        return approximateBidOfOthers > marginalCost ? approximateBidOfOthers : (long) Math.ceil(marginalCost);
+        return approximateBidOfOthers > marginalCost ? approximateBidOfOthers : (long) Math.floor(marginalCost);
     }
 
     public Map<Integer, Double[][]> getAgentEstimatedCostsMap() {
