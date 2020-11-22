@@ -9,8 +9,6 @@ import java.util.stream.Collectors;
 
 public class AgentsBidStrategy {
 
-    //TODO: EXPLAIN what is epsilon
-    private Double epsilon;
     private Topology topology;
     //the id of the agent
     private Integer agentId;
@@ -21,6 +19,8 @@ public class AgentsBidStrategy {
     private Map<Integer, City> idCityMap;
     // [city -> list of cities sorted ascending by distance to city]
     private Map<City, List<City>> closeCitiesMap;
+    // constant that defines epsilon close cities
+    private Double epsilon;
     // [city -> list of ids of cities that are epsilon-close to city ordered by distance]
     // city1 is epsilon close to a city2 iff distance(city1, city) < epsilon * biggest distance between 2 cities
     private Map<City, List<Integer>> epsilonCloseCityIdsMap;
@@ -136,7 +136,6 @@ public class AgentsBidStrategy {
             }
             Double[][] costs = agentEstimatedCostsMap.get(i);
             double futureBid;
-            //TODO: maybe this should not be zero since he has limited capacity, maybe change how we update
             if (lastWinner == i) {
                 futureBid = 0.0;
             } else if (lastOffers[i] == null) {
@@ -186,6 +185,9 @@ public class AgentsBidStrategy {
     }
 
     /**
+     * Calculates the bid for the agent for given task and already calculated marginal cost
+     * extracts minimum for opponents
+     * 
      * @param task
      * @param marginalCost
      * @return
@@ -217,7 +219,10 @@ public class AgentsBidStrategy {
             System.out.println("Belief: " + beliefForExtractedBid);
         }
 
-        //TODO comment this
+        //linear approximation for bidding for opponents depending on the belief
+        // when belief=1 we bid extracted bid - 1
+        // when belief=0 we bid our marginal cost (possibly we refine it after probability speculation)
+        // otherwise it linearly approximates between marginal cost and extracted bid
         Long approximateBidOfOthers = extractedBidOfOthers != null ?
                 (long) (Math.ceil(beliefForExtractedBid * extractedBidOfOthers + (1 - beliefForExtractedBid) * marginalCost)) - 1 :
                 (long) (Math.ceil(marginalCost))- 1;
