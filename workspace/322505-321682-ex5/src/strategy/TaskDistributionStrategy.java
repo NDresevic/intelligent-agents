@@ -24,13 +24,10 @@ public class TaskDistributionStrategy {
     private List<Topology.City> agentHomeCities;
     // the tasks that the agent already won in the auction
     private Set<Task> wonTasks;
-    // approximation for cost per kilometer for other agents
-    private double approximatedVehicleCost;
 
-    public TaskDistributionStrategy(TaskDistribution distribution, double approximatedVehicleCost, double probabilityThreshold,
+    public TaskDistributionStrategy(TaskDistribution distribution, double probabilityThreshold,
                                     double distributionDiscount, List<Topology.City> agentHomeCities) {
         this.distribution = distribution;
-        this.approximatedVehicleCost = approximatedVehicleCost;
         this.PROBABILITY_THRESHOLD = probabilityThreshold;
         this.DISTRIBUTION_DISCOUNT = distributionDiscount;
         this.agentHomeCities = new ArrayList<>(agentHomeCities);
@@ -41,12 +38,12 @@ public class TaskDistributionStrategy {
         wonTasks.add(task);
     }
 
-
     /**
      * if the speculated probability is above the PROBABILITY_THRESHOLD the refinement is done
      * the refining means that the agent accepts to bid a bit lower than it intended (lower than marginal cost)
      * since the task is payable in the future
      * the final bid is calculated as (1 - DISTRIBUTION_DISCOUNT) * marginal cost
+     *
      * @param task
      * @param marginalCost
      * @param myBid
@@ -62,11 +59,11 @@ public class TaskDistributionStrategy {
             double probDeliveryPickup = distribution.probability(wonTask.deliveryCity, task.pickupCity);
             double probPickupDelivery = distribution.probability(task.deliveryCity, wonTask.pickupCity);
             double probHomeCity = 0.0;
-            for (Topology.City homeCity : agentHomeCities){
+            for (Topology.City homeCity : agentHomeCities) {
                 probHomeCity = Math.max(distribution.probability(homeCity, wonTask.pickupCity), probHomeCity);
             }
             speculatedProbability = Math.max(Math.max(probDeliveryPickup, probPickupDelivery),
-                    Math.max(probHomeCity,speculatedProbability));
+                    Math.max(probHomeCity, speculatedProbability));
         }
         System.out.println("Speculated probability: " + speculatedProbability);
 

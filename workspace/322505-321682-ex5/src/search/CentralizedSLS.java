@@ -12,10 +12,11 @@ public class CentralizedSLS {
 
     // approximate upper bound for execution time of neighbor exploration in stochastic search
     private static long NEIGHBOUR_EXPLORATION_TIME = 1000;
+    // specifies after how many iterations of algorithm we change the simulated annealing parameter
+    private static int CHANGE_ANNEALING_PARAM_ITERATION = 50000;
 
     // the initial constant for simulated annealing
-    // TODO: SET THIS PARAMETER -> NOW IT IS ALWAYS 0
-    private double simulatedAnnealingParam;
+    private double simulatedAnnealingParam = 0.01;
 
     // any city maps to the closest vehicle (based on vehicle home town)
     private final List<Vehicle> vehicleList;
@@ -54,8 +55,8 @@ public class CentralizedSLS {
                 count++;
             }
 
-            if (count % 50000 == 0) {
-                simulatedAnnealingParam *= 1.1;
+            if (count % CHANGE_ANNEALING_PARAM_ITERATION == 0) {
+                simulatedAnnealingParam *= 2;
             }
 
             remainingTime -= System.currentTimeMillis() - loopStartTime;

@@ -44,7 +44,7 @@ public class AgentsBidStrategy {
     }
 
     /**
-     * initializes maps: idCityMap, closeCitiesMap and epsilonCloseCityIdsMap
+     * Initializes maps: idCityMap, closeCitiesMap and epsilonCloseCityIdsMap.
      */
     private void initializeCityAndDistanceMaps() {
         for (City city : topology.cities()) {
@@ -77,8 +77,9 @@ public class AgentsBidStrategy {
     }
 
     /**
-     * initialize the matrix of bidding approximations for other agents
-     * @param numberOfAgents number of agents that participate in bidding
+     * Initialize the matrix of bidding approximations for other agents.
+     *
+     * @param numberOfAgents - number of agents that participate in bidding
      */
     public void initializeAgentCosts(int numberOfAgents) {
         int n = topology.cities().size();
@@ -188,9 +189,10 @@ public class AgentsBidStrategy {
      * Calculates the bid for the agent for given task and already calculated marginal cost
      * 1. extracts minimum for opponents
      * 2. extracts belief for the approximation (unknown entries are null)
-     *          belief = known approximations / number of competitors
+     * belief = known approximations / number of competitors
      * 3. linearly approximates the bids for competitor (linearly depending on the extracted minimum and belief)
      * 4. my bid = max (marginal cost, approximated bid for competitors - 1)
+     *
      * @param task
      * @param marginalCost
      * @return
@@ -228,7 +230,7 @@ public class AgentsBidStrategy {
         // otherwise it linearly approximates between marginal cost and extracted bid
         Long approximateBidOfOthers = extractedBidOfOthers != null ?
                 (long) (Math.ceil(beliefForExtractedBid * extractedBidOfOthers + (1 - beliefForExtractedBid) * marginalCost)) - 1 :
-                (long) (Math.ceil(marginalCost))- 1;
+                (long) (Math.ceil(marginalCost)) - 1;
         System.out.println("Approximated bid: " + approximateBidOfOthers);
 
         return approximateBidOfOthers > marginalCost ? approximateBidOfOthers : (long) Math.ceil(marginalCost);

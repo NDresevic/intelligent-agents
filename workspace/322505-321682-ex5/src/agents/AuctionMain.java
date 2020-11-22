@@ -105,9 +105,9 @@ public class AuctionMain implements AuctionBehavior {
         }
 
         this.agentsBidStrategy = new AgentsBidStrategy(epsilon, topology, approximatedVehicleCost, agent.id());
-        List<City> agentHomeCities = agent.vehicles().stream().map(v -> v.homeCity()).collect(Collectors.toList());
-        this.taskDistributionStrategy = new TaskDistributionStrategy(distribution, approximatedVehicleCost,
-                probabilityThreshold, distributionDiscount, agentHomeCities);
+        List<City> agentHomeCities = agent.vehicles().stream().map(Vehicle::homeCity).collect(Collectors.toList());
+        this.taskDistributionStrategy = new TaskDistributionStrategy(distribution, probabilityThreshold,
+                distributionDiscount, agentHomeCities);
         for (Vehicle vehicle : agent.vehicles()) {
             this.maxCapacity = Math.max(vehicle.capacity(), maxCapacity);
         }
