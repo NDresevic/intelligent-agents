@@ -56,7 +56,13 @@ public class AuctionMain implements AuctionBehavior {
 
     // parameters defined in config file /agents.xml
     private double epsilon;
+    //
     private double discount;
+    // threshold for speculated probability
+    private double probabilityThreshold;
+    // discount for the bid if it is payable
+    private double distributionDiscount;
+
 
     @Override
     public void setup(Topology topology, TaskDistribution distribution, Agent agent) {
@@ -87,8 +93,10 @@ public class AuctionMain implements AuctionBehavior {
         }
 
         // loading model parameters
-        this.epsilon = agent.readProperty("epsilon", Double.class, 0.1);
-        this.discount = agent.readProperty("discount", Double.class, 0.1);
+        this.epsilon = agent.readProperty("epsilon", Double.class, 0.3);
+        this.discount = agent.readProperty("discount", Double.class, 0.5);
+        this.probabilityThreshold = agent.readProperty("probabilityThreshold", Double.class, 0.2);
+        this.distributionDiscount = agent.readProperty("distributionDiscount", Double.class, 0.25);
 
         if (setupTimeout < System.currentTimeMillis() - startTime - SETUP_ESTIMATED_TIME) {
             System.err.println("Setup time is not long enough for the preprocessing. The planning is terminated.");
@@ -96,7 +104,8 @@ public class AuctionMain implements AuctionBehavior {
         }
 
         this.agentsBidStrategy = new AgentsBidStrategy(epsilon, topology, approximatedVehicleCost, agent.id());
-        this.taskDistributionStrategy = new TaskDistributionStrategy(distribution, approximatedVehicleCost);
+        this.taskDistributionStrategy = new TaskDistributionStrategy(distribution, approximatedVehicleCost,
+                probabilityThreshold, distributionDiscount);
         for (Vehicle vehicle : agent.vehicles()) {
             this.maxCapacity = Math.max(vehicle.capacity(), maxCapacity);
         }

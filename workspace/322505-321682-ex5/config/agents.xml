@@ -15,6 +15,8 @@
 
         <set epsilon="0.3"/>
 		<set discount="0.5"/>
+        <set probabilityThreshold="0.2"/>
+        <set distributionDiscount="0.25"/>
 	</agent>
 
 </agents>
